@@ -6,7 +6,5 @@ opencv-python
 tqdm
 pandas
 numpy
-seaborn
-matplotlib
 wandb
 pyyaml

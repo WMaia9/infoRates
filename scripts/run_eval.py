@@ -8,7 +8,13 @@ import wandb
 from transformers import AutoImageProcessor, AutoModelForVideoClassification
 
 from info_rates.analysis.evaluate import evaluate_fixed_parallel, evaluate_fixed_parallel_counts
-from info_rates.viz.plots import plot_accuracy_curves, plot_heatmap
+
+# Optional: plotting (requires matplotlib, seaborn)
+try:
+    from info_rates.viz.plots import plot_accuracy_curves, plot_heatmap
+    PLOTTING_AVAILABLE = True
+except ImportError:
+    PLOTTING_AVAILABLE = False
 
 
 def main():
@@ -156,8 +162,11 @@ def main():
         wandb.summary["best_stride"] = best_config["stride"]
 
     if not ddp or rank == 0:
-        plot_accuracy_curves(df_results)
-        plot_heatmap(df_results)
+        if PLOTTING_AVAILABLE:
+            plot_accuracy_curves(df_results)
+            plot_heatmap(df_results)
+        else:
+            print("Plotting skipped (matplotlib/seaborn not installed)")
     
     if not args.no_wandb and (not ddp or rank == 0):
         wandb.finish()
