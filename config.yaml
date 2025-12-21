@@ -27,7 +27,7 @@ eval_out: "UCF101_data/results/ucf101_50f_finetuned.csv"
 eval_coverages: [10, 25, 50, 75, 100]
 eval_strides: [1, 2, 4, 8, 16]
 eval_sample_size: 0
-eval_batch_size: 20
+eval_batch_size: 35
 eval_workers: 16
 eval_wandb_run_name: "eval-finetuned-timesformer-ddp"
 build_manifest_if_missing: true

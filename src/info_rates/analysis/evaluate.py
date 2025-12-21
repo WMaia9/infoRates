@@ -28,6 +28,7 @@ def evaluate_fixed_parallel(
     batch_size: int = 8,
     num_workers: int = 8,
     jitter_coverage_pct: float = 0.0,
+    rank: int = 0,
 ) -> pd.DataFrame:
     # sample_size <= 0 means use full dataset
     if sample_size is not None and sample_size > 0 and sample_size < len(df):
@@ -63,7 +64,7 @@ def evaluate_fixed_parallel(
                     )
 
                 batch_frames, batch_labels = [], []
-                for fut in tqdm(as_completed(futures), total=len(futures), desc=f"stride={stride} cov={cov}%"):
+                for fut in tqdm(as_completed(futures), total=len(futures), desc=f"stride={stride} cov={cov}%", disable=(rank != 0)):
                     frames, label = fut.result()
                     if frames is None:
                         continue
@@ -80,10 +81,8 @@ def evaluate_fixed_parallel(
                                 correct += 1
                         total += len(batch_labels)
                         batch_frames, batch_labels = [], []
-                        # MEMORY FIX: Clear GPU tensors to prevent memory leak
+                        # Release tensor references to prevent memory leak
                         del inputs, logits
-                        if device.type == "cuda":
-                            torch.cuda.empty_cache()
 
                 if batch_frames:
                     with torch.amp.autocast(device.type, dtype=torch.float16):
@@ -94,10 +93,12 @@ def evaluate_fixed_parallel(
                         if norm_label(p) == norm_label(l):
                             correct += 1
                     total += len(batch_labels)
-                    # MEMORY FIX: Clear GPU tensors to prevent memory leak
+                    # Release tensor references to prevent memory leak
                     del inputs, logits
-                    if device.type == "cuda":
-                        torch.cuda.empty_cache()
+
+            # Clear GPU cache between coverage/stride combinations
+            if device.type == "cuda":
+                torch.cuda.empty_cache()
 
             acc = correct / max(1, total)
             results.append({
@@ -122,6 +123,7 @@ def evaluate_fixed_parallel_counts(
     batch_size: int = 8,
     num_workers: int = 8,
     jitter_coverage_pct: float = 0.0,
+    rank: int = 0,
 ):
     """
     Like evaluate_fixed_parallel but returns raw counts and total_time for aggregation.
@@ -162,7 +164,7 @@ def evaluate_fixed_parallel_counts(
                     )
 
                 batch_frames, batch_labels = [], []
-                for fut in tqdm(as_completed(futures), total=len(futures), desc=f"stride={stride} cov={cov}%"):
+                for fut in tqdm(as_completed(futures), total=len(futures), desc=f"stride={stride} cov={cov}%", disable=(rank != 0)):
                     frames, label = fut.result()
                     if frames is None:
                         continue
@@ -179,10 +181,8 @@ def evaluate_fixed_parallel_counts(
                                 correct += 1
                         total += len(batch_labels)
                         batch_frames, batch_labels = [], []
-                        # MEMORY FIX: Clear GPU tensors to prevent memory leak
+                        # Release tensor references to prevent memory leak
                         del inputs, logits
-                        if device.type == "cuda":
-                            torch.cuda.empty_cache()
 
                 if batch_frames:
                     with torch.amp.autocast(device.type, dtype=torch.float16):
@@ -193,10 +193,12 @@ def evaluate_fixed_parallel_counts(
                         if norm_label(p) == norm_label(l):
                             correct += 1
                     total += len(batch_labels)
-                    # MEMORY FIX: Clear GPU tensors to prevent memory leak
+                    # Release tensor references to prevent memory leak
                     del inputs, logits
-                    if device.type == "cuda":
-                        torch.cuda.empty_cache()
+
+            # Clear GPU cache between coverage/stride combinations
+            if device.type == "cuda":
+                torch.cuda.empty_cache()
 
             total_time = (time.time() - t0)
             results.append({
@@ -210,8 +212,12 @@ def evaluate_fixed_parallel_counts(
     return results
 
 
-def per_class_analysis_fast(df: pd.DataFrame, processor, model, coverages: List[int] = [10, 25, 50, 75, 100], strides: List[int] = [1, 2, 4, 8, 16], sample_size: int = 200, batch_size: int = 8, num_workers: int = 8) -> pd.DataFrame:
-    subset = df.sample(sample_size, random_state=42) if sample_size < len(df) else df
+def per_class_analysis_fast(df: pd.DataFrame, processor, model, coverages: List[int] = [10, 25, 50, 75, 100], strides: List[int] = [1, 2, 4, 8, 16], sample_size: int = 200, batch_size: int = 8, num_workers: int = 8, rank: int = 0) -> pd.DataFrame:
+    # sample_size <= 0 means use full dataset
+    if sample_size is not None and sample_size > 0 and sample_size < len(df):
+        subset = df.sample(sample_size, random_state=42)
+    else:
+        subset = df
     results = []
     device = next(model.parameters()).device
 
@@ -229,7 +235,7 @@ def per_class_analysis_fast(df: pd.DataFrame, processor, model, coverages: List[
                 futures = [ex.submit(extract_and_prepare, row._asdict() if hasattr(row, "_asdict") else row.to_dict(), cov, stride) for _, row in subset.iterrows()]
 
                 batch_frames, batch_labels = [], []
-                for fut in tqdm(as_completed(futures), total=len(futures), desc=f"stride={stride} cov={cov}%"):
+                for fut in tqdm(as_completed(futures), total=len(futures), desc=f"stride={stride} cov={cov}%", disable=(rank != 0)):
                     frames, label = fut.result()
                     if frames is None:
                         continue
@@ -249,10 +255,8 @@ def per_class_analysis_fast(df: pd.DataFrame, processor, model, coverages: List[
                             if p == true_id:
                                 correct_per_class[true_id] += 1
                         batch_frames, batch_labels = [], []
-                        # MEMORY FIX: Clear GPU tensors to prevent memory leak
+                        # Release tensor references to prevent memory leak
                         del inputs, logits, preds
-                        if device.type == "cuda":
-                            torch.cuda.empty_cache()
 
                 if batch_frames:
                     with torch.amp.autocast(device.type, dtype=torch.float16):
@@ -266,10 +270,12 @@ def per_class_analysis_fast(df: pd.DataFrame, processor, model, coverages: List[
                         total_per_class[true_id] += 1
                         if p == true_id:
                             correct_per_class[true_id] += 1
-                    # MEMORY FIX: Clear GPU tensors to prevent memory leak
+                    # Release tensor references to prevent memory leak
                     del inputs, logits, preds
-                    if device.type == "cuda":
-                        torch.cuda.empty_cache()
+
+            # Clear GPU cache between coverage/stride combinations
+            if device.type == "cuda":
+                torch.cuda.empty_cache()
 
             accs = correct_per_class / np.maximum(1, total_per_class)
             for i in range(n_classes):
@@ -283,6 +289,7 @@ def per_class_analysis_fast(df: pd.DataFrame, processor, model, coverages: List[
                     })
 
             avg_time = (time.time() - t0) / np.maximum(1, total_per_class.sum())
-            print(f"stride={stride} cov={cov}% | mean time: {avg_time:.3f}s/frame")
+            if rank == 0:
+                print(f"✅ stride={stride} cov={cov}% | mean time: {avg_time:.3f}s/frame")
 
     return pd.DataFrame(results)

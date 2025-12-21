@@ -148,6 +148,7 @@ def main():
             batch_size=batch_size,
             num_workers=workers,
             jitter_coverage_pct=jitter_coverage_pct,
+            rank=rank,
         )
 
         # Aggregate counts across ranks
@@ -187,6 +188,7 @@ def main():
             batch_size=batch_size,
             num_workers=workers,
             jitter_coverage_pct=jitter_coverage_pct,
+            rank=rank,
         )
 
     # Save and log only rank 0
@@ -230,6 +232,7 @@ def main():
             sample_size=subset_size,
             batch_size=batch_size,
             num_workers=workers,
+            rank=rank,
         )
         os.makedirs(os.path.dirname(per_class_out), exist_ok=True)
         df_per_class.to_csv(per_class_out, index=False)

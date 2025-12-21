@@ -8,11 +8,11 @@ Source CSV: UCF101_data/results/ucf101_50f_finetuned.csv
 - **Avg Time/Sample**: 0.0174s
 
 ## Best Efficiency Configuration (Accuracy per Second)
-- **Accuracy/Sec**: 58.40
-- **Accuracy**: 0.9792
-- **Coverage**: 75%
+- **Accuracy/Sec**: 57.68
+- **Accuracy**: 0.9818
+- **Coverage**: 100%
 - **Stride**: 1
-- **Avg Time/Sample**: 0.0168s
+- **Avg Time/Sample**: 0.0170s
 
 ## Best Configuration per Stride
 - **Stride 1**: coverage=100% → accuracy=0.9818
@@ -26,9 +26,8 @@ Configurations where accuracy cannot be improved without increasing latency.
 
 | Coverage | Stride | Accuracy | Avg Time (s) |
 |----------|--------|----------|______________|
-| 10% | 4 | 0.9009 | 0.0165 |
-| 75% | 8 | 0.9758 | 0.0167 |
-| 75% | 1 | 0.9792 | 0.0168 |
+| 10% | 8 | 0.7950 | 0.0170 |
+| 100% | 1 | 0.9818 | 0.0170 |
 | 100% | 4 | 0.9826 | 0.0170 |
-| 100% | 2 | 0.9829 | 0.0170 |
+| 100% | 2 | 0.9829 | 0.0171 |
 | 100% | 8 | 0.9843 | 0.0174 |
