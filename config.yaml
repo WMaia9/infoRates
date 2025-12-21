@@ -2,10 +2,7 @@
 
 # Model settings
 model_id: "facebook/timesformer-base-finetuned-k400"
-num_frames: 50
-size: 224
-
-# Training settings
+model_name: "timesformer"  # NEW: Model selection (timesformer | videomae | vivit)
 train_epochs: 5
 train_batch_size: 24  # Batch size per GPU (total = batch_size * num_gpus)
 train_learning_rate: 5e-5
