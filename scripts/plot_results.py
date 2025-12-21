@@ -172,6 +172,77 @@ def compute_per_class_aliasing_summary(df_per_class: pd.DataFrame) -> pd.DataFra
     return result.sort_values("aliasing_drop", ascending=False)
 
 
+def plot_per_class_aliasing_bar(df_per_class: pd.DataFrame, out_dir: Path) -> Path | None:
+    """Plot top-15 most aliasing-sensitive classes (100% → 25% drop)."""
+    alias_summary = compute_per_class_aliasing_summary(df_per_class)
+    if alias_summary.empty:
+        return None
+    top = alias_summary.head(15).set_index("class")
+    plt.figure(figsize=(10, 6))
+    top["aliasing_drop"].plot(kind="bar", color="tomato")
+    plt.title("Top 15 Aliasing-Sensitive Classes (Accuracy Drop 100% → 25%)")
+    plt.ylabel("Accuracy Drop")
+    plt.xlabel("Class")
+    plt.xticks(rotation=45, ha="right")
+    plt.grid(alpha=0.3)
+    out_path = out_dir / "per_class_aliasing_drop.png"
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=160, bbox_inches="tight")
+    plt.close()
+    return out_path
+
+
+def plot_per_class_stride_heatmap(df_per_class: pd.DataFrame, out_dir: Path) -> Path | None:
+    """Heatmap of mean accuracy per class × stride."""
+    if "class" not in df_per_class.columns or "stride" not in df_per_class.columns:
+        return None
+    pivot = df_per_class.groupby(["class", "stride"])['accuracy'].mean().unstack()
+    plt.figure(figsize=(12, 8))
+    if HAS_SEABORN:
+        sns.heatmap(pivot, cmap="viridis", linewidths=0.3)
+    else:
+        data = pivot.values
+        im = plt.imshow(data, cmap="viridis", aspect="auto")
+        plt.colorbar(im, label="Accuracy")
+        plt.xticks(range(len(pivot.columns)), [str(c) for c in pivot.columns])
+        plt.yticks(range(len(pivot.index)), [str(s) for s in pivot.index])
+    plt.title("Mean Accuracy per Class and Stride")
+    plt.xlabel("Stride")
+    plt.ylabel("Class")
+    out_path = out_dir / "per_class_stride_heatmap.png"
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=160, bbox_inches="tight")
+    plt.close()
+    return out_path
+
+
+def plot_per_class_accuracy_boxplot(df_per_class: pd.DataFrame, out_dir: Path) -> Path | None:
+    """Boxplot of accuracy distribution across sampling configs per class (top-N classes by samples)."""
+    if "class" not in df_per_class.columns or "accuracy" not in df_per_class.columns:
+        return None
+    # Select top 30 classes by sample count to keep figure readable
+    counts = df_per_class.groupby("class")["n_samples"].sum().sort_values(ascending=False)
+    top_classes = counts.head(30).index
+    df_top = df_per_class[df_per_class["class"].isin(top_classes)]
+    plt.figure(figsize=(12, 6))
+    if HAS_SEABORN:
+        sns.boxplot(data=df_top, x="class", y="accuracy", color="skyblue")
+    else:
+        # Fallback simple boxplot
+        data = [df_top[df_top["class"] == c]["accuracy"].values for c in top_classes]
+        plt.boxplot(data)
+        plt.xticks(range(1, len(top_classes) + 1), top_classes)
+    plt.title("Accuracy Distribution Across Sampling Configurations (Top-30 Classes)")
+    plt.xticks(rotation=90)
+    plt.xlabel("Class")
+    plt.ylabel("Accuracy")
+    out_path = out_dir / "per_class_accuracy_distribution.png"
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=160, bbox_inches="tight")
+    plt.close()
+    return out_path
+
+
 def summarize(df: pd.DataFrame) -> dict:
     """Compute key summary stats for paper."""
     best_idx = df["accuracy"].idxmax()
@@ -260,6 +331,7 @@ def main():
     parser.add_argument("--config", type=str, default="config.yaml", help="Path to config.yaml")
     parser.add_argument("--csv", type=str, default=None, help="Optional explicit path to results CSV")
     parser.add_argument("--per-class-csv", type=str, default=None, help="Optional path to per-class results CSV")
+    parser.add_argument("--wandb", action="store_true", help="Log generated plots to Weights & Biases")
     args = parser.parse_args()
 
     config_path = Path(args.config) if args.config else None
@@ -285,15 +357,20 @@ def main():
     summary = summarize(df)
     summary_md = write_summary_md(summary, results_dir, source_csv)
 
-    # Save per-class aliasing summary if available
+    # Save per-class outputs if available
     per_class_csv = Path(args.per_class_csv) if args.per_class_csv else None
+    per_class_alias_csv_path = None
+    per_class_alias_png = per_class_heatmap_png = per_class_box_png = None
     if per_class_csv and per_class_csv.exists():
         df_per_class = pd.read_csv(per_class_csv)
         alias_summary = compute_per_class_aliasing_summary(df_per_class)
         if not alias_summary.empty:
-            alias_path = results_dir / "per_class_aliasing_drop.csv"
-            alias_summary.to_csv(alias_path, index=False)
-            print(f"- {alias_path}")
+            per_class_alias_csv_path = results_dir / "per_class_aliasing_drop.csv"
+            alias_summary.to_csv(per_class_alias_csv_path, index=False)
+        # Generate per-class charts
+        per_class_alias_png = plot_per_class_aliasing_bar(df_per_class, results_dir)
+        per_class_heatmap_png = plot_per_class_stride_heatmap(df_per_class, results_dir)
+        per_class_box_png = plot_per_class_accuracy_boxplot(df_per_class, results_dir)
 
     print("Saved:")
     print(f"- {acc_cov}")
@@ -301,6 +378,46 @@ def main():
     print(f"- {eff_plot}")
     print(f"- {pareto_plot}")
     print(f"- {summary_md}")
+    if per_class_alias_csv_path:
+        print(f"- {per_class_alias_csv_path}")
+    if per_class_alias_png:
+        print(f"- {per_class_alias_png}")
+    if per_class_heatmap_png:
+        print(f"- {per_class_heatmap_png}")
+    if per_class_box_png:
+        print(f"- {per_class_box_png}")
+
+    # Optional: log to W&B
+    if args.wandb:
+        try:
+            import wandb  # type: ignore
+            # Project name from config or default
+            cfg = yaml.safe_load(config_path.read_text()) if config_path and config_path.exists() else {}
+            project = cfg.get("wandb_project", "inforates-ucf101")
+            run = wandb.init(project=project, job_type="plots", config={"source_csv": str(source_csv)})
+            wandb.log({
+                "accuracy_vs_coverage": wandb.Image(str(acc_cov)),
+                "accuracy_heatmap": wandb.Image(str(heatmap)),
+                "accuracy_per_second": wandb.Image(str(eff_plot)),
+                "pareto_frontier": wandb.Image(str(pareto_plot)),
+            })
+            # Per-class aliasing table if exists
+            per_class_csv = Path(args.per_class_csv) if args.per_class_csv else None
+            if per_class_csv and per_class_csv.exists():
+                df_per_class = pd.read_csv(per_class_csv)
+                alias_summary = compute_per_class_aliasing_summary(df_per_class)
+                if not alias_summary.empty:
+                    wandb.log({"per_class_aliasing_drop": wandb.Table(dataframe=alias_summary.head(20))})
+                # Log per-class charts if generated
+                if per_class_alias_png:
+                    wandb.log({"per_class_aliasing_drop_chart": wandb.Image(str(per_class_alias_png))})
+                if per_class_heatmap_png:
+                    wandb.log({"per_class_stride_heatmap": wandb.Image(str(per_class_heatmap_png))})
+                if per_class_box_png:
+                    wandb.log({"per_class_accuracy_distribution": wandb.Image(str(per_class_box_png))})
+            wandb.finish()
+        except Exception as e:
+            print(f"W&B logging skipped: {e}")
 
 
 if __name__ == "__main__":

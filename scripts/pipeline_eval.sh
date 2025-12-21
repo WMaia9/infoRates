@@ -86,6 +86,23 @@ print(cfg.get("eval_wandb_run_name","eval-finetuned-timesformer-ddp"))
 PY
 )
 
+# Per-class output path and sample size from config (defaults applied if missing)
+PER_CLASS_OUT=$(python - <<PY
+import yaml
+with open("$CONFIG","r") as f:
+  cfg=yaml.safe_load(f)
+print(cfg.get("eval_per_class_out","UCF101_data/results/ucf101_50f_per_class.csv"))
+PY
+)
+
+PER_CLASS_SAMPLE_SIZE=$(python - <<PY
+import yaml
+with open("$CONFIG","r") as f:
+  cfg=yaml.safe_load(f)
+print(int(cfg.get("eval_per_class_sample_size", -1)))
+PY
+)
+
 ## Build manifest if missing (prefer building from existing clips; do NOT re-split videos)
 if [[ ! -f "$MANIFEST" ]] && [[ "$BUILD_IF_MISSING" == "True" || "$BUILD_IF_MISSING" == "true" ]]; then
   echo "Manifest not found: $MANIFEST. Building from clips at $FIXED_OUT_DIR..."
@@ -130,4 +147,34 @@ print(yaml.safe_load(open("$CONFIG")).get("save_path","models/timesformer_ucf101
 PY
 )" \
   --manifest "$MANIFEST" \
-  --wandb-run-name "$EVAL_RUN_NAME"
+  --wandb-run-name "$EVAL_RUN_NAME" \
+  --per-class \
+  --per-class-out "$PER_CLASS_OUT" \
+  --per-class-sample-size "$PER_CLASS_SAMPLE_SIZE"
+
+# After evaluation, generate plots and summary automatically
+RESULTS_CSV=$(python - <<PY
+import yaml
+cfg=yaml.safe_load(open("$CONFIG"))
+print(cfg.get("eval_out","UCF101_data/results/ucf101_50f_finetuned.csv"))
+PY
+)
+
+PER_CLASS_CSV=$(python - <<PY
+import yaml
+cfg=yaml.safe_load(open("$CONFIG"))
+print(cfg.get("eval_per_class_out","UCF101_data/results/ucf101_50f_per_class.csv"))
+PY
+)
+
+if [[ -f "$RESULTS_CSV" ]]; then
+  echo "Generating plots and summary from $RESULTS_CSV ..."
+  # Log plots to W&B and save locally; include per-class CSV if present
+  if [[ -f "$PER_CLASS_CSV" ]]; then
+    python scripts/plot_results.py --config "$CONFIG" --csv "$RESULTS_CSV" --per-class-csv "$PER_CLASS_CSV" --wandb
+  else
+    python scripts/plot_results.py --config "$CONFIG" --csv "$RESULTS_CSV" --wandb
+  fi
+else
+  echo "Warning: Results CSV not found at $RESULTS_CSV; skipping plotting." >&2
+fi

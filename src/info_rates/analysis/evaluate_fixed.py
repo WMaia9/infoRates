@@ -9,15 +9,6 @@ from tqdm import tqdm
 from ..sampling.temporal import extract_and_prepare, norm_label
 
 
-# IMPORTANT: GPU Memory Management
-# All inference functions in this module now include explicit tensor cleanup
-# to prevent memory leaks during long evaluation runs with multiple coverage/stride
-# combinations. The cleanup pattern is:
-#   del inputs, logits  # Release tensor references
-#   if device.type == "cuda":
-#       torch.cuda.empty_cache()  # Clear CUDA cache
-
-
 def evaluate_fixed_parallel(
     df: pd.DataFrame,
     processor,
@@ -211,7 +202,11 @@ def evaluate_fixed_parallel_counts(
 
 
 def per_class_analysis_fast(df: pd.DataFrame, processor, model, coverages: List[int] = [10, 25, 50, 75, 100], strides: List[int] = [1, 2, 4, 8, 16], sample_size: int = 200, batch_size: int = 8, num_workers: int = 8) -> pd.DataFrame:
-    subset = df.sample(sample_size, random_state=42) if sample_size < len(df) else df
+    # sample_size <= 0 means use full dataset
+    if sample_size is not None and sample_size > 0 and sample_size < len(df):
+        subset = df.sample(sample_size, random_state=42)
+    else:
+        subset = df
     results = []
     device = next(model.parameters()).device
 
@@ -283,6 +278,6 @@ def per_class_analysis_fast(df: pd.DataFrame, processor, model, coverages: List[
                     })
 
             avg_time = (time.time() - t0) / np.maximum(1, total_per_class.sum())
-            print(f"stride={stride} cov={cov}% | mean time: {avg_time:.3f}s/frame")
+            print(f"✅ stride={stride} cov={cov}% | mean time: {avg_time:.3f}s/frame")
 
     return pd.DataFrame(results)

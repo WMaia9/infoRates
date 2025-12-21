@@ -64,6 +64,7 @@ def main():
     parser.add_argument("--ddp", action="store_true", help="Enable Distributed Data Parallel evaluation")
     parser.add_argument("--per-class", action="store_true", help="Compute per-class metrics as well")
     parser.add_argument("--per-class-out", type=str, help="Path to save per-class CSV")
+    parser.add_argument("--per-class-sample-size", type=int, help="Limit per-class eval to N samples for speed")
     parser.add_argument("--jitter-coverage-pct", type=float, help="Randomly jitter coverage ±pct during eval for robustness checks")
     args = parser.parse_args()
 
@@ -87,7 +88,9 @@ def main():
     ddp = args.ddp or bool(cfg.get("use_ddp", False))
     do_per_class = args.per_class or bool(cfg.get("eval_per_class", False))
     per_class_out = args.per_class_out or cfg.get("eval_per_class_out", "UCF101_data/results/ucf101_50f_per_class.csv")
-    per_class_sample_size = int(cfg.get("eval_per_class_sample_size", -1))  # -1 means full
+    per_class_sample_size = (
+        args.per_class_sample_size if args.per_class_sample_size is not None else int(cfg.get("eval_per_class_sample_size", -1))
+    )  # -1 means full
     jitter_coverage_pct = args.jitter_coverage_pct if args.jitter_coverage_pct is not None else float(cfg.get("eval_jitter_coverage_pct", 0.0))
 
     # Setup DDP if requested

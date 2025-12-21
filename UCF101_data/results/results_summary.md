@@ -1,11 +1,34 @@
 # Temporal Sampling Results Summary
 Source CSV: UCF101_data/results/ucf101_50f_finetuned.csv
-- Best overall: accuracy=0.9843, coverage=100%, stride=8, avg_time=0.0163s
-- Best efficiency (accuracy/sec): acc/sec=60.89, accuracy=0.9792, coverage=75%, stride=1, avg_time=0.0161s
 
-- Best per stride:
-  - stride=1: coverage=100% → accuracy=0.9818
-  - stride=2: coverage=100% → accuracy=0.9829
-  - stride=4: coverage=100% → accuracy=0.9826
-  - stride=8: coverage=100% → accuracy=0.9843
-  - stride=16: coverage=100% → accuracy=0.9800
+## Best Overall Configuration
+- **Accuracy**: 0.9843
+- **Coverage**: 100%
+- **Stride**: 8
+- **Avg Time/Sample**: 0.0174s
+
+## Best Efficiency Configuration (Accuracy per Second)
+- **Accuracy/Sec**: 58.40
+- **Accuracy**: 0.9792
+- **Coverage**: 75%
+- **Stride**: 1
+- **Avg Time/Sample**: 0.0168s
+
+## Best Configuration per Stride
+- **Stride 1**: coverage=100% → accuracy=0.9818
+- **Stride 2**: coverage=100% → accuracy=0.9829
+- **Stride 4**: coverage=100% → accuracy=0.9826
+- **Stride 8**: coverage=100% → accuracy=0.9843
+- **Stride 16**: coverage=100% → accuracy=0.9800
+
+## Pareto-Optimal Frontier (Accuracy vs Latency)
+Configurations where accuracy cannot be improved without increasing latency.
+
+| Coverage | Stride | Accuracy | Avg Time (s) |
+|----------|--------|----------|______________|
+| 10% | 4 | 0.9009 | 0.0165 |
+| 75% | 8 | 0.9758 | 0.0167 |
+| 75% | 1 | 0.9792 | 0.0168 |
+| 100% | 4 | 0.9826 | 0.0170 |
+| 100% | 2 | 0.9829 | 0.0170 |
+| 100% | 8 | 0.9843 | 0.0174 |
