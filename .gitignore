@@ -41,8 +41,17 @@ wheels/
 .ipynb_checkpoints/
 *.ipynb
 
-# Data and models (ignore full dataset and generated outputs)
-UCF101_data/
+# Data and models (ignore raw datasets and heavy generated artifacts, keep results/plots)
+UCF101_data/UCF-101/
+UCF101_data/UCF101_50f/
+UCF101_data/UCF101_fixed_50f/
+UCF101_data/manifests/
+UCF101_data/ucfTrainTestlist/
+UCF101_data/ucf101_fixedlen_*.csv
+# Ignore large numeric outputs
+UCF101_data/results/*.csv
+UCF101_data/results/*.json
+UCF101_data/results/*.tsv
 models/*.pt
 models/*.pth
 models/timesformer_ucf101_ddp/
@@ -78,3 +87,4 @@ config.local.yaml
 htmlcov/
 .coverage
 .hypothesis/
+fine_tuned_models/
