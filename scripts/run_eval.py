@@ -78,7 +78,7 @@ def main():
         cfg = {}
 
     model_path = args.model_path or cfg.get("save_path", "models/timesformer_ucf101_ddp")
-    manifest = args.manifest or cfg.get("eval_manifest", "UCF101_data/manifests/ucf101_50f.csv")
+    manifest = args.manifest or cfg.get("eval_manifest", "data/UCF101_data/manifests/ucf101_50f.csv")
     coverages = args.coverages if args.coverages else cfg.get("eval_coverages", [10, 25, 50, 75, 100])
     strides = args.strides if args.strides else cfg.get("eval_strides", [1, 2, 4, 8, 16])
     sample_size = args.sample_size if args.sample_size is not None else int(cfg.get("eval_sample_size", 200))
@@ -86,7 +86,7 @@ def main():
     workers = args.workers if args.workers is not None else int(cfg.get("eval_workers", 8))
 
     # Derive per-model default output paths when not explicitly provided
-    default_results_dir = cfg.get("eval_results_dir", "UCF101_data/results")
+    default_results_dir = cfg.get("eval_results_dir", "data/UCF101_data/results")
     model_tag = os.path.basename(os.path.normpath(model_path))
     # Extract model name (timesformer, videomae, vivit) from model_tag
     model_name = "timesformer" if "timesformer" in model_tag.lower() else \

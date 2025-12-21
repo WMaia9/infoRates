@@ -1,5 +1,36 @@
 # Python
 __pycache__/
+*.pyc
+.venv/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Data (large datasets)
+data/UCF101_data/
+data/HMDB51_data/
+data/Kinetics400_data/
+data/SSv2_data/
+
+# Keep small metadata/manifests tracked
+!data/UCF101_data/manifests/**
+!data/HMDB51_data/splits/**
+!data/Kinetics400_data/*.txt
+!data/Kinetics400_data/k400_50/**
+
+# Model artifacts
+fine_tuned_models/
+*.pt
+*.pth
+
+# WandB logs
+wandb/
+
+# OS/editor
+.DS_Store
+.vscode/
+# Python
+__pycache__/
 *.py[cod]
 *$py.class
 *.so

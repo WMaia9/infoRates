@@ -210,13 +210,13 @@ def main():
     parser.add_argument(
         "--results-dir",
         type=str,
-        default="UCF101_data/results",
+        default="data/UCF101_data/results",
         help="Directory containing results files",
     )
     parser.add_argument(
         "--output-dir",
         type=str,
-        default="UCF101_data/results",
+        default="data/UCF101_data/results",
         help="Directory for output plots and analysis",
     )
     

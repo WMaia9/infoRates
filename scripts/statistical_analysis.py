@@ -15,7 +15,7 @@ import json
 # ============================================================
 # LOAD DATA
 # ============================================================
-results_dir = Path("UCF101_data/results")
+results_dir = Path("data/UCF101_data/results")
 df_agg = pd.read_csv(results_dir / "ucf101_50f_finetuned.csv")
 df_per_class = pd.read_csv(results_dir / "ucf101_50f_per_class.csv")
 

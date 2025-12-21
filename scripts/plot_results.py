@@ -26,13 +26,13 @@ def load_results(config_path: Path | None, csv_path: Path | None) -> tuple[pd.Da
     with open(config_path, "r") as f:
         cfg = yaml.safe_load(f)
 
-    default_csv = Path(cfg.get("eval_out", "UCF101_data/results/ucf101_50f_finetuned.csv"))
+    default_csv = Path(cfg.get("eval_out", "data/UCF101_data/results/ucf101_50f_finetuned.csv"))
     if default_csv.exists():
         df = pd.read_csv(default_csv)
         return df, default_csv
 
     # Fallback: pick latest CSV in results dir
-    results_dir = Path(cfg.get("results_dir", "UCF101_data/results"))
+    results_dir = Path(cfg.get("results_dir", "data/UCF101_data/results"))
     candidates = sorted(results_dir.glob("*.csv"))
     if not candidates:
         raise FileNotFoundError(f"No CSV found in {results_dir}")
@@ -343,7 +343,7 @@ def main():
     results_dir = None
     if config_path and config_path.exists():
         cfg = yaml.safe_load(config_path.read_text())
-        results_dir = Path(cfg.get("results_dir", "UCF101_data/results"))
+        results_dir = Path(cfg.get("results_dir", "data/UCF101_data/results"))
     if results_dir is None:
         results_dir = source_csv.parent
 

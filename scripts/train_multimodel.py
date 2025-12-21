@@ -418,7 +418,7 @@ Examples:
         return default
     
     # Merge CLI args with config (CLI takes precedence)
-    video_root = args.video_root or _cfg("train_video_root", "video_root", "UCF101_data/UCF-101")
+    video_root = args.video_root or _cfg("train_video_root", "video_root", "data/UCF101_data/UCF-101")
     epochs = args.epochs if args.epochs is not None else int(_cfg("train_epochs", "epochs", 2, int))
     batch_size = args.batch_size if args.batch_size is not None else int(_cfg("train_batch_size", "batch_size", 4, int))
     lr = args.lr if args.lr is not None else float(_cfg("train_learning_rate", "learning_rate", 1e-5, float))

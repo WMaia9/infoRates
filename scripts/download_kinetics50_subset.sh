@@ -5,8 +5,8 @@ set -euo pipefail
 # Requirements: yt-dlp, ffmpeg.
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-LIST_DIR="$ROOT_DIR/Kinetics400_data/k400_50"
-OUT_DIR="$ROOT_DIR/Kinetics400_data/k400_50"
+LIST_DIR="$ROOT_DIR/data/Kinetics400_data/k400_50"
+OUT_DIR="$ROOT_DIR/data/Kinetics400_data/k400_50"
 
 TRAIN_LIST="$LIST_DIR/train_urls.txt"
 VAL_LIST="$LIST_DIR/val_urls.txt"
@@ -26,7 +26,7 @@ usage() {
   cat <<'EOF'
 Usage: download_kinetics50_subset.sh [train|val|both]
 
-Reads URL lists from Kinetics400_data/k400_50 and downloads trimmed clips
+Reads URL lists from data/Kinetics400_data/k400_50 and downloads trimmed clips
 into class-labeled folders under the same directory.
 
 Examples:

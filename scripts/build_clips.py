@@ -9,9 +9,9 @@ from info_rates.data.ucf101 import list_videos, build_fixed_manifest
 def main():
     parser = argparse.ArgumentParser(description="Build fixed-frame clips and manifest from UCF101 videos.")
     parser.add_argument("--video-root", required=True, help="Root folder of UCF101 videos (e.g., UCF101_data/UCF-101)")
-    parser.add_argument("--out", default="UCF101_data/UCF101_50f", help="Output directory for 50-frame clips")
+    parser.add_argument("--out", default="data/UCF101_data/UCF101_50f", help="Output directory for 50-frame clips")
     parser.add_argument("--frames", type=int, default=50, help="Target frames per segment")
-    parser.add_argument("--manifest", default="UCF101_data/manifests/ucf101_50f.csv", help="Path to save manifest CSV")
+    parser.add_argument("--manifest", default="data/UCF101_data/manifests/ucf101_50f.csv", help="Path to save manifest CSV")
     parser.add_argument("--workers", type=int, default=None, help="Number of parallel workers (default: CPU count - 2)")
     args = parser.parse_args()
 

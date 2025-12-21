@@ -242,7 +242,7 @@ def main():
     parser.add_argument(
         "--output-dir",
         type=str,
-        default="UCF101_data/results",
+        default="data/UCF101_data/results",
         help="Output directory for results",
     )
     parser.add_argument(
@@ -261,7 +261,7 @@ def main():
     # Load test data
     manifest_path = config.get(
         "test_manifest",
-        "UCF101_data/manifests/ucf101_50f.csv"
+        "data/UCF101_data/manifests/ucf101_50f.csv"
     )
     df_test = pd.read_csv(manifest_path)
     print(f"✓ Loaded {len(df_test)} test videos")
