@@ -121,3 +121,9 @@ htmlcov/
 .coverage
 .hypothesis/
 fine_tuned_models/
+
+# Ignore large binary files (20bin and similar)
+*.bin
+
+# Ignore 20bn dataset files
+20bn-something-something-v2-*

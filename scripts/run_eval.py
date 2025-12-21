@@ -12,9 +12,9 @@ from transformers import AutoImageProcessor, AutoModelForVideoClassification
 
 from info_rates.analysis.evaluate import (
     evaluate_fixed_parallel,
-    evaluate_fixed_parallel_counts,
     per_class_analysis_fast,
 )
+from info_rates.analysis.evaluate_fixed import evaluate_fixed_parallel_counts
 
 # Optional: plotting (requires matplotlib, seaborn)
 try:
@@ -138,7 +138,10 @@ def main():
             project=wandb_project,
             name=wandb_run_name,
             config={
+                "model_name": model_name,
                 "model_path": model_path,
+                "manifest": args.manifest,
+                "dataset": os.path.basename(args.manifest).replace('.csv', ''),
                 "coverages": coverages,
                 "strides": strides,
                 "sample_size": sample_size,
@@ -150,7 +153,7 @@ def main():
             }
         )
 
-    processor = AutoImageProcessor.from_pretrained(model_path)
+    processor = AutoImageProcessor.from_pretrained(model_path, use_fast=True)
     model = AutoModelForVideoClassification.from_pretrained(model_path).to(device).eval()
 
     df = pd.read_csv(manifest)
@@ -183,7 +186,7 @@ def main():
 
     # Filter out already-completed configs
     pending_configs = [(c, s) for c in coverages for s in strides if (c, s) not in completed_configs]
-    if not pending_configs:
+    if not pending_configs and not args.per_class:
         if not ddp or rank == 0:
             print("All configurations already completed. Nothing to evaluate.")
         if not args.no_wandb and (not ddp or rank == 0):
@@ -193,13 +196,32 @@ def main():
         return
 
     # Extract only pending coverages and strides
-    pending_coverages = sorted(set(c for c, s in pending_configs))
-    pending_strides = sorted(set(s for c, s in pending_configs))
+    pending_coverages = sorted(set(c for c, s in pending_configs)) if pending_configs else []
+    pending_strides = sorted(set(s for c, s in pending_configs)) if pending_configs else []
+    
+    # If no pending configs but per-class is requested, load existing results
+    if not pending_configs and args.per_class:
+        if not ddp or rank == 0:
+            print(f"No pending configs. Loading existing results for per-class analysis...")
+        if existing_df is None and os.path.exists(out_path):
+            existing_df = pd.read_csv(out_path)
+        if existing_df is not None and not existing_df.empty:
+            if not ddp or rank == 0:
+                print(f"Loaded {len(existing_df)} configurations for per-class analysis.")
+        else:
+            if not ddp or rank == 0:
+                print("Error: No existing results to use for per-class analysis.")
+            if not args.no_wandb and (not ddp or rank == 0):
+                wandb.finish()
+            if ddp:
+                dist.destroy_process_group()
+            return
     
     if not ddp or rank == 0:
         print(f"Evaluating {len(pending_configs)} pending configurations...")
-        print(f"Coverages: {pending_coverages}")
-        print(f"Strides: {pending_strides}")
+        if pending_coverages:
+            print(f"Coverages: {pending_coverages}")
+            print(f"Strides: {pending_strides}")
 
     # Prepare data subset
     if sample_size is not None and sample_size > 0 and sample_size < len(df):
@@ -207,8 +229,8 @@ def main():
     else:
         subset = df
 
-    # Evaluate one config at a time with incremental saving
-    if ddp and world_size > 1:
+    # Evaluate one config at a time with incremental saving (skip if no pending configs)
+    if pending_configs and ddp and world_size > 1:
         # Shard rows across ranks
         my_subset = subset.iloc[rank::world_size]
         
@@ -267,7 +289,7 @@ def main():
                     print(f"✓ Saved: stride={stride} cov={coverage}% -> acc={acc:.4f}")
         
         df_results = existing_df if existing_df is not None else pd.DataFrame()
-    else:
+    elif pending_configs:
         # Non-DDP: evaluate one config at a time
         all_rows = []
         for stride in pending_strides:
@@ -300,6 +322,9 @@ def main():
                 print(f"✓ Saved: stride={stride} cov={coverage}% -> acc={result.iloc[0]['accuracy']:.4f}")
         
         df_results = existing_df if existing_df is not None else pd.DataFrame()
+    else:
+        # No evaluation needed, use loaded results for per-class
+        df_results = existing_df if existing_df is not None else pd.DataFrame()
 
     # Final save (redundant but safe)
     if not ddp or rank == 0:
@@ -331,24 +356,57 @@ def main():
         else:
             print("Plotting skipped (matplotlib/seaborn not installed)")
 
-    # Optional per-class analysis (rank 0 only)
-    if do_per_class and (not ddp or rank == 0):
+    # Optional per-class analysis - use both GPUs by splitting configs
+    if do_per_class:
         subset_size = len(df) if per_class_sample_size <= 0 else min(per_class_sample_size, len(df))
+        # Get model's expected frame count from config
+        model_num_frames = model.config.num_frames if hasattr(model.config, 'num_frames') else 16
+        
+        # Split configs across ranks for parallel processing
+        all_configs = [(c, s) for c in coverages for s in strides]
+        if ddp:
+            # Each rank processes a subset of configs
+            my_configs = [(c, s) for i, (c, s) in enumerate(all_configs) if i % world_size == rank]
+            my_coverages = sorted(set(c for c, s in my_configs))
+            my_strides = sorted(set(s for c, s in my_configs))
+            if rank == 0:
+                print(f"Rank {rank}: processing {len(my_configs)}/{len(all_configs)} configs")
+        else:
+            my_coverages = coverages
+            my_strides = strides
+        
+        # Each rank processes its subset
+        # Use per_class_out as checkpoint path
         df_per_class = per_class_analysis_fast(
             df=df,
             processor=processor,
             model=model,
-            coverages=coverages,
-            strides=strides,
+            coverages=my_coverages,
+            strides=my_strides,
             sample_size=subset_size,
-            batch_size=batch_size,
+            batch_size=max(32, batch_size),  # Use larger batches for per-class (faster)
             num_workers=workers,
             rank=rank,
+            num_frames=model_num_frames,  # Pass correct frame count
+            checkpoint_path=per_class_out,
         )
-        os.makedirs(os.path.dirname(per_class_out), exist_ok=True)
-        df_per_class.to_csv(per_class_out, index=False)
+        
+        # Gather results from all ranks
+        if ddp:
+            # Gather all dataframes to rank 0
+            gathered_dfs = [None] * world_size
+            dist.all_gather_object(gathered_dfs, df_per_class)
+            if rank == 0:
+                # Combine all results
+                df_per_class = pd.concat(gathered_dfs, ignore_index=True)
+        
+        # Save and log only on rank 0
+        if not ddp or rank == 0:
+            os.makedirs(os.path.dirname(per_class_out), exist_ok=True)
+            df_per_class.to_csv(per_class_out, index=False)
+            print(f"✅ Saved per-class results: {len(df_per_class)} rows")
 
-        if not args.no_wandb:
+        if not args.no_wandb and (not ddp or rank == 0):
             wandb.log({"per_class_table": wandb.Table(dataframe=df_per_class)})
 
             # Summaries: best per class and top aliasing drop (100% vs 25% coverage mean across strides)
