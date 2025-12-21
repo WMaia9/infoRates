@@ -187,54 +187,54 @@ Based on aliasing sensitivity, actions fall into three categories:
 1. **`accuracy_vs_coverage.png`**: Line plot showing accuracy vs coverage for each stride
    - **Caption**: *"Accuracy degradation under temporal undersampling. Larger strides (8, 16) achieve peak accuracy at full coverage but suffer severe aliasing at low coverage. Stride-1 provides robustness to undersampling."*
    
-   ![Accuracy vs Coverage](UCF101_data/results/accuracy_vs_coverage.png)
+   ![Accuracy vs Coverage](UCF101_data/results/timesformer/accuracy_vs_coverage.png)
 
 2. **`pareto_frontier.png`**: Scatter plot with Pareto frontier highlighted
    - **Caption**: *"Pareto frontier of accuracy-latency trade-offs. Only minimal (10%) and maximal (100%) coverage configurations are Pareto-optimal, indicating no efficiency advantage for intermediate sampling rates."*
    
-   ![Pareto Frontier](UCF101_data/results/pareto_frontier.png)
+   ![Pareto Frontier](UCF101_data/results/timesformer/pareto_frontier.png)
 
 3. **`per_class_aliasing_drop.png`**: Bar chart of top-15 aliasing-sensitive classes
    - **Caption**: *"Classes with highest temporal aliasing sensitivity. Actions involving rapid periodic motion (BodyWeightSquats, Lunges), ballistic trajectories (HighJump, CliffDiving), and high-frequency oscillations (SoccerJuggling, YoYo) exhibit accuracy drops exceeding 20-56% when temporal coverage decreases from 100% to 25%."*
    
-   ![Per-Class Aliasing Sensitivity](UCF101_data/results/per_class_aliasing_drop.png)
+   ![Per-Class Aliasing Sensitivity](UCF101_data/results/timesformer/per_class_aliasing_drop.png)
 
 ### Supplementary Figures
 
 4. **`accuracy_heatmap.png`**: Coverage × Stride heatmap
    - **Caption**: *"Accuracy heatmap across all coverage-stride combinations. Optimal accuracy (98.43%) achieved at coverage=100%, stride=8."*
    
-   ![Accuracy Heatmap](UCF101_data/results/accuracy_heatmap.png)
+   ![Accuracy Heatmap](UCF101_data/results/timesformer/accuracy_heatmap.png)
 
 5. **`per_class_representative.png`**: **[NEW - CLEARER FOR REVIEWERS]** Representative classes comparison
    - **Caption**: *"Aliasing sensitivity comparison between most vulnerable (dashed lines) and most robust (solid lines) action classes at stride=8. High-frequency actions like BodyWeightSquats and HighJump show catastrophic degradation below 50% coverage, while low-frequency actions like ApplyLipstick and BenchPress maintain >95% accuracy even at 10% temporal sampling. This 10-class subset illustrates the full spectrum of temporal aliasing behaviors across UCF-101."*
    
-   ![Representative Classes](UCF101_data/results/per_class_representative.png)
+   ![Representative Classes](UCF101_data/results/timesformer/per_class_representative.png)
 
 6. **`per_class_aggregate_analysis.png`**: **[NEW - CLEARER FOR REVIEWERS]** Cross-class aggregate performance with variance analysis
    - **Caption**: *"Left: Mean accuracy across all 101 classes with ±1 standard deviation error bands, showing consistent temporal aliasing effects across strides. Right: Inter-class variability (std dev) increases exponentially at low coverage, indicating class-dependent aliasing sensitivity. At 10% coverage, variance is 28.5× higher than at 100%, demonstrating extreme heterogeneity in temporal information requirements."*
    
-   ![Aggregate Analysis](UCF101_data/results/per_class_aggregate_analysis.png)
+   ![Aggregate Analysis](UCF101_data/results/timesformer/per_class_aggregate_analysis.png)
 
 7. **`per_class_sensitivity_tiers.png`**: **[NEW - CLEARER FOR REVIEWERS]** Categorical performance by aliasing sensitivity
    - **Caption**: *"Action classes grouped into three sensitivity tiers based on accuracy drop from 100%→25% coverage. Low-sensitivity actions (66 classes, Δ<15%) show minimal aliasing; moderate-sensitivity (15 classes, 15-30%) degrade predictably; high-sensitivity (4 classes: BodyWeightSquats, HighJump, CliffDiving, SoccerJuggling, Δ>30%) exhibit catastrophic failure under temporal undersampling. Error bands represent ±1 standard deviation within each tier."*
    
-   ![Sensitivity Tiers](UCF101_data/results/per_class_sensitivity_tiers.png)
+   ![Sensitivity Tiers](UCF101_data/results/timesformer/per_class_sensitivity_tiers.png)
 
 8. **`per_class_distribution_by_coverage.png`**: **[NEW - CLEARER FOR REVIEWERS]** Distribution shape analysis by coverage
    - **Caption**: *"Boxplot (left) and violin plot (right) of per-class accuracy distributions at stride=8. At full coverage, nearly all classes cluster near perfect accuracy (variance=0.0022). At 10% coverage, distribution broadens dramatically (variance=0.0619, 28.5× higher), with multi-modal structure indicating distinct action frequency groups. Violin plot reveals bimodal distribution at low coverage: one peak near perfect accuracy (low-freq actions) and a lower mode near 50-70% (high-freq actions)."*
    
-   ![Distribution by Coverage](UCF101_data/results/per_class_distribution_by_coverage.png)
+   ![Distribution by Coverage](UCF101_data/results/timesformer/per_class_distribution_by_coverage.png)
 
 9. **`per_class_stride_heatmap.png`**: Class × Stride heatmap (per-class accuracy at 100% coverage)
    - **Caption**: *"Per-class accuracy at full temporal coverage across strides. Most classes are stride-invariant, but high-frequency classes (HighJump, PoleVault) show strong stride dependence."*
    
-   ![Per-Class Stride Heatmap](UCF101_data/results/per_class_stride_heatmap.png)
+   ![Per-Class Stride Heatmap](UCF101_data/results/timesformer/per_class_stride_heatmap.png)
 
 10. **`accuracy_per_second.png`**: Efficiency plot
    - **Caption**: *"Accuracy per second efficiency metric across strides and coverages."*
    
-   ![Accuracy per Second](UCF101_data/results/accuracy_per_second.png)
+   ![Accuracy per Second](UCF101_data/results/timesformer/accuracy_per_second.png)
 
 ---
 
