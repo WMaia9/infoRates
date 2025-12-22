@@ -186,6 +186,7 @@ def main():
 
     # Filter out already-completed configs
     pending_configs = [(c, s) for c in coverages for s in strides if (c, s) not in completed_configs]
+    existing_df = None  # Ensure this is always defined
     if not pending_configs and not args.per_class:
         if not ddp or rank == 0:
             print("All configurations already completed. Nothing to evaluate.")
@@ -198,7 +199,7 @@ def main():
     # Extract only pending coverages and strides
     pending_coverages = sorted(set(c for c, s in pending_configs)) if pending_configs else []
     pending_strides = sorted(set(s for c, s in pending_configs)) if pending_configs else []
-    
+
     # If no pending configs but per-class is requested, load existing results
     if not pending_configs and args.per_class:
         if not ddp or rank == 0:
@@ -216,7 +217,7 @@ def main():
             if ddp:
                 dist.destroy_process_group()
             return
-    
+
     if not ddp or rank == 0:
         print(f"Evaluating {len(pending_configs)} pending configurations...")
         if pending_coverages:
@@ -239,7 +240,6 @@ def main():
             for coverage in pending_coverages:
                 if (coverage, stride) in completed_configs:
                     continue
-                    
                 # Evaluate single config
                 local_counts = evaluate_fixed_parallel_counts(
                     df=my_subset,
@@ -251,24 +251,24 @@ def main():
                     batch_size=batch_size,
                     num_workers=workers,
                     jitter_coverage_pct=jitter_coverage_pct,
-                    rank=rank,
-                    num_frames=None,
                 )
                 
                 # Aggregate across ranks
-                row = local_counts[0] if local_counts else {
-                    "coverage": coverage, "stride": stride, "correct": 0, "total": 0, "total_time": 0.0
-                }
-                tensor = torch.tensor([row["correct"], row["total"], row["total_time"]], 
-                                     dtype=torch.float32, device=device)
+                if not local_counts.empty:
+                    correct_sum = int((local_counts["accuracy"] * local_counts["n_samples"]).sum())
+                    total_sum = int(local_counts["n_samples"].sum())
+                    total_time_sum = 0.0  # Not available per class
+                else:
+                    correct_sum = 0
+                    total_sum = 0
+                    total_time_sum = 0.0
+                tensor = torch.tensor([correct_sum, total_sum, total_time_sum], dtype=torch.float32, device=device)
                 dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
-                
                 correct_sum = int(tensor[0].item())
                 total_sum = int(tensor[1].item())
                 total_time_sum = float(tensor[2].item())
                 acc = (correct_sum / total_sum) if total_sum > 0 else 0.0
                 avg_time = (total_time_sum / total_sum) if total_sum > 0 else 0.0
-                
                 new_row = pd.DataFrame([{
                     "coverage": coverage,
                     "stride": stride,

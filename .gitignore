@@ -86,6 +86,7 @@ data/HMDB51_data/*
 data/Kinetics400_data/*
 data/SSv2_data/*
 20bn-something-something-v2-*
-
+data/UCF101_data/results/**/*.csv
+data/UCF101_data/results/*.csv
 # 2. EXCEPTION: Strictly allow ONLY the results folder
 !data/UCF101_data/results/
