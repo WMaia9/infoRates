@@ -175,7 +175,7 @@ Figure 5 visualizes mean accuracy trajectories for each tier with error bands.
 **Evaluation Results** (CSV):
 - `ucf101_50f_finetuned.csv` – Aggregate accuracy across 25 coverage-stride configurations
 - `ucf101_50f_per_class.csv` – Per-class results for 101 classes across all configurations (2,525 rows)
-- `per_class_aliasing_drop.csv` – Ranked aliasing sensitivity metrics for each class
+- `per_class_aliasing_drop.csv` – Ranked aliasing sensitivity metrics for each class.
 
 **Statistical Analysis Outputs**:
 - `statistical_results.json` – Hypothesis test statistics: ANOVA F-statistics, p-values, effect sizes (η², Cohen's d), variance homogeneity metrics
