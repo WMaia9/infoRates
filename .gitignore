@@ -127,3 +127,9 @@ fine_tuned_models/
 
 # Ignore 20bn dataset files
 20bn-something-something-v2-*
+
+# Allow results CSVs and plots to be tracked
+!data/UCF101_data/results/*.csv
+!data/UCF101_data/results/*.png
+!results/*.csv
+!results/*.png
