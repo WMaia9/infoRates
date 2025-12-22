@@ -70,11 +70,11 @@ We identified Pareto-optimal configurations where no alternative achieves superi
 | 100%     | 2      | 98.29%   | 0.0171      | 2           | Near-optimal |
 | 100%     | 8      | 98.43%   | 0.0174      | 1 (optimal) | Maximum accuracy |
 
-Notably, no intermediate coverage levels (25%, 50%, 75%) appear on the Pareto frontier. The bimodal distribution—concentrated at 10% (minimal resource) and 100% (maximal accuracy)—suggests that intermediate sampling strategies incur computational cost without commensurate accuracy gains. Figure 2 visualizes this frontier in accuracy-latency space.
+Notably, no intermediate coverage levels (25%, 50%, 75%) appear on the Pareto frontier. The bimodal distribution—concentrated at 10% (minimal resource) and 100% (maximal accuracy) suggests that intermediate sampling strategies incur computational cost without commensurate accuracy gains. Figure 2 visualizes this frontier in accuracy-latency space.
 
 ![Figure 2: Pareto Frontier](data/UCF101_data/results/timesformer/lagacy/pareto_frontier.png)
 
-**Figure 2.** Pareto frontier analysis reveals bimodal optimality: only minimal (10%) and maximal (100%) coverage configurations are non-dominated. Intermediate sampling rates (25-75%) lie strictly below the frontier, indicating suboptimal accuracy-efficiency trade-offs. All configurations exhibit near-identical latency (~0.017s), placing coverage—not stride—as the primary performance determinant.
+**Figure 2.** Pareto frontier analysis reveals bimodal optimality: only minimal (10%) and maximal (100%) coverage configurations are non-dominated. Intermediate sampling rates (25-75%) lie strictly below the frontier, indicating suboptimal accuracy-efficiency trade-offs. All configurations exhibit near-identical latency (~0.017s), placing coverage not stride as the primary performance determinant.
 
 ---
 
@@ -180,11 +180,11 @@ Levene's test for equality of variances confirmed that variance in accuracy is n
 
 $$F(4, 496) = 37.43, \quad p < 0.001$$
 
-Specifically, variance increases systematically as coverage decreases—from $\text{Var} = 0.0022$ at 100% coverage to $\text{Var} = 0.0619$ at 10% coverage, a 28.5-fold increase. This heteroscedasticity indicates that class-level factors (e.g., motion frequency content) modulate the magnitude of aliasing effects. Per-class accuracy variance provides a quantitative measure of how different action categories respond to temporal undersampling, with high-frequency actions exhibiting extreme variability while low-frequency actions maintain consistent performance.
+Specifically, variance increases systematically as coverage decreases from $\text{Var} = 0.0022$ at 100% coverage to $\text{Var} = 0.0619$ at 10% coverage, a 28.5-fold increase. This heteroscedasticity indicates that class-level factors (e.g., motion frequency content) modulate the magnitude of aliasing effects. Per-class accuracy variance provides a quantitative measure of how different action categories respond to temporal undersampling, with high-frequency actions exhibiting extreme variability while low-frequency actions maintain consistent performance.
 
 ![Figure 5: Variance Analysis](data/UCF101_data/results/timesformer/lagacy/per_class_distribution_by_coverage.png)
 
-**Figure 5.** Distribution of per-class accuracies at stride-8 across coverage levels. Left: Boxplot showing median, quartiles, and outliers. Right: Violin plot revealing bimodal structure at low coverage—one mode near perfect accuracy (aliasing-robust classes) and another at 50-70% (aliasing-sensitive classes). Variance explosion at reduced coverage (28.5× increase from 100% to 10%) validates heterogeneous temporal information requirements across action categories.
+**Figure 5.** Distribution of per-class accuracies at stride-8 across coverage levels. Left: Boxplot showing median, quartiles, and outliers. Right: Violin plot revealing bimodal structure at low coverage one mode near perfect accuracy (aliasing-robust classes) and another at 50-70% (aliasing-sensitive classes). Variance explosion at reduced coverage (28.5× increase from 100% to 10%) validates heterogeneous temporal information requirements across action categories.
 
 ---
 
