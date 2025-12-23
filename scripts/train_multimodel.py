@@ -456,10 +456,18 @@ Examples:
             }
         )
     
-    # Load class names and splits
+    # Load class names
     class_names = list_classes(video_root)
-    train_files, val_files, _ = train_val_test_split(video_root)
-    
+
+    # Use official UCF101 train/test manifests
+    import pandas as pd
+    train_manifest = "data/UCF101_data/manifests/ucf101_trainlist01.csv"
+    test_manifest = "data/UCF101_data/manifests/ucf101_testlist01.csv"
+    train_df = pd.read_csv(train_manifest)
+    test_df = pd.read_csv(test_manifest)
+    train_files = train_df["video_path"].tolist()
+    val_files = test_df["video_path"].tolist()
+
     if is_main_process:
         print(f"Found {len(class_names)} classes")
         print(f"Train samples: {len(train_files)}")

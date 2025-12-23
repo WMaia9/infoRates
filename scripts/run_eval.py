@@ -259,6 +259,7 @@ def main():
                     batch_size=batch_size,
                     num_workers=workers,
                     jitter_coverage_pct=jitter_coverage_pct,
+                    num_frames=eval_num_frames,
                 )
                 # Aggregate across ranks
                 if not local_counts.empty:

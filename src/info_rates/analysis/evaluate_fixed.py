@@ -113,6 +113,7 @@ def evaluate_fixed_parallel_counts(
     batch_size: int = 8,
     num_workers: int = 8,
     jitter_coverage_pct: float = 0.0,
+    num_frames: int = None,
 ):
     """
     Like evaluate_fixed_parallel but returns raw counts and total_time for aggregation.
@@ -138,7 +139,7 @@ def evaluate_fixed_parallel_counts(
             t0 = time.time()
 
             with ThreadPoolExecutor(max_workers=num_workers) as ex:
-                futures = [ex.submit(extract_and_prepare, row._asdict() if hasattr(row, "_asdict") else row.to_dict(), cov, stride) for _, row in subset.iterrows()]
+                futures = [ex.submit(extract_and_prepare, row._asdict() if hasattr(row, "_asdict") else row.to_dict(), cov, stride, num_select=num_frames) for _, row in subset.iterrows()]
 
                 batch_frames, batch_labels = [], []
                 for fut in tqdm(as_completed(futures), total=len(futures), desc=f"stride={stride} cov={cov}%"):
