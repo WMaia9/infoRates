@@ -4,7 +4,7 @@ import seaborn as sns
 import numpy as np
 
 # Load per-class results
-csv_path = "data/UCF101_data/results/videomae/fine_tuned_videomae_ucf101_per_class.csv"
+csv_path = "data/UCF101_data/results/videomae/fine_tuned_videomae_ucf101_per_class_testset.csv"
 df = pd.read_csv(csv_path)
 
 # Only use stride=8

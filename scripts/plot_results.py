@@ -96,10 +96,13 @@ def plot_accuracy_per_time(df: pd.DataFrame, out_dir: Path, model_name: str = ""
     # Avoid division by zero
     df_eff = df.copy()
     df_eff["acc_per_sec"] = df_eff["accuracy"] / df_eff["avg_time"].replace(0, pd.NA)
+    # Filter out NA values
+    df_eff = df_eff.dropna(subset=["acc_per_sec"])
     plt.figure(figsize=(8, 5))
     for stride in sorted(df_eff["stride"].unique()):
         subset = df_eff[df_eff["stride"] == stride].sort_values("coverage")
-        plt.plot(subset["coverage"], subset["acc_per_sec"], marker="o", label=f"stride={stride}")
+        if not subset.empty:
+            plt.plot(subset["coverage"], subset["acc_per_sec"], marker="o", label=f"stride={stride}")
     plt.xlabel("Coverage (%)")
     plt.ylabel("Accuracy per second")
     title_prefix = f"{model_name} " if model_name else ""
@@ -262,8 +265,12 @@ def summarize(df: pd.DataFrame) -> dict:
     # Efficiency best (accuracy per second)
     df_eff = df.copy()
     df_eff["acc_per_sec"] = df_eff["accuracy"] / df_eff["avg_time"].replace(0, pd.NA)
-    eff_idx = df_eff["acc_per_sec"].idxmax()
-    eff_best = df_eff.loc[eff_idx]
+    df_eff = df_eff.dropna(subset=["acc_per_sec"])
+    if not df_eff.empty:
+        eff_idx = df_eff["acc_per_sec"].idxmax()
+        eff_best = df_eff.loc[eff_idx]
+    else:
+        eff_best = {"acc_per_sec": 0.0, "accuracy": 0.0, "coverage": 0, "stride": 0, "avg_time": 0.0}
     
     # Pareto frontier
     frontier = compute_pareto_frontier(df)

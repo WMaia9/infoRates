@@ -12,12 +12,15 @@ except ImportError:
     HAS_SEABORN = False
 
 # Load per-class results
-csv_path = "data/UCF101_data/results/videomae/fine_tuned_videomae_ucf101_per_class.csv"
+csv_path = "data/UCF101_data/results/videomae/fine_tuned_videomae_ucf101_per_class_testset.csv"
 df = pd.read_csv(csv_path)
 
 
 # Use stride=8 to match TimeSformer plot
 df = df[df['stride'] == 8]
+
+# Aggregate duplicates by taking mean accuracy
+df = df.groupby(['class', 'coverage'], as_index=False)['accuracy'].mean()
 
 
 # Pivot to get accuracy for each class at each coverage
