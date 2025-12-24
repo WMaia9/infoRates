@@ -191,7 +191,7 @@ def evaluate_fixed_parallel(
 
                                     # Save checkpoint after each config
                                     if checkpoint_path is not None and rank == 0:
-                                        pd.DataFrame(results).to_csv(checkpoint_path, index=False)
+                                        pd.DataFrame(results).to_csv(checkpoint_path, index=False, float_format='%.6f')
     # sample_size <= 0 means use full dataset
     if sample_size is not None and sample_size > 0 and sample_size < len(df):
         subset = df.sample(sample_size, random_state=42)
@@ -265,13 +265,14 @@ def evaluate_fixed_parallel(
 
             total_time = (time.time() - t0)
             acc = (correct / total) if total > 0 else 0.0
+            avg_time = total_time / total if total > 0 else 0.0
             results.append({
                 "coverage": cov,
                 "stride": stride,
                 "accuracy": acc,
                 "correct": correct,
                 "total": total,
-                "total_time": total_time,
+                "avg_time": avg_time,
             })
 
     return results

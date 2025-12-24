@@ -6,7 +6,7 @@ from itertools import cycle
 
 try:
     import seaborn as sns
-    sns.set(style="whitegrid", context="talk", font_scale=1.2)
+    sns.set(style="whitegrid", context="talk", font_scale=1.0)
     HAS_SEABORN = True
 except ImportError:
     HAS_SEABORN = False
@@ -15,64 +15,70 @@ except ImportError:
 csv_path = "data/UCF101_data/results/videomae/fine_tuned_videomae_ucf101_per_class_testset.csv"
 df = pd.read_csv(csv_path)
 
+# Find the best stride (highest mean accuracy across all classes and coverages)
+stride_performance = df.groupby('stride')['accuracy'].mean()
+best_stride = stride_performance.idxmax()
+print(f"Best stride: {best_stride} (mean accuracy: {stride_performance[best_stride]:.4f})")
 
-# Use stride=8 to match TimeSformer plot
-df = df[df['stride'] == 8]
+# Use the best stride
+df = df[df['stride'] == best_stride]
 
 # Aggregate duplicates by taking mean accuracy
 df = df.groupby(['class', 'coverage'], as_index=False)['accuracy'].mean()
-
 
 # Pivot to get accuracy for each class at each coverage
 pivot = df.pivot(index='class', columns='coverage', values='accuracy')
 
 coverages = sorted(df['coverage'].unique())
 
+# Compute metrics for sensitivity analysis
+# Sensitive: largest drop from 100% to 25% coverage
+drop_100_to_25 = pivot[100] - pivot[25]
+sensitive_classes = drop_100_to_25.sort_values(ascending=False).head(5).index.tolist()
 
-# Compute drop from 100% to 25% coverage
-drop = pivot[100] - pivot[25]
+# Robust: lowest variance across all coverages (most consistent performance)
+variance = pivot.var(axis=1)
+robust_classes = variance.sort_values().head(5).index.tolist()
 
-
-# Top 5 most sensitive classes (largest drop)
-sensitive_classes = drop.sort_values(ascending=False).head(5).index.tolist()
-# Top 5 most robust classes (smallest drop)
-robust_classes = drop.sort_values().head(5).index.tolist()
+print(f"Most sensitive classes (largest 100%→25% drop): {sensitive_classes}")
+print(f"Most robust classes (lowest variance across coverages): {robust_classes}")
 
 coverages = sorted(df['coverage'].unique())
 
+# Use a better color palette
+colors = plt.cm.Set1(np.linspace(0, 1, 10))
+line_styles = ['-', '--', '-.', ':', (0, (3, 1, 1, 1))]  # solid, dashed, dashdot, dotted, dashdotdot
 
-# Use tab10 color palette for up to 10 lines
-import matplotlib.cm as cm
-color_map = cm.get_cmap('tab10')
-markers = ['o', 's', 'D', '^', 'P', 'X', 'v', '<', '>', '*']
-fragile_markers = markers[:5]
-robust_markers = markers[5:]
+plt.figure(figsize=(14, 10))
 
-plt.figure(figsize=(12,8))
-
-# Plot fragile (dashed, unique markers)
+# Plot fragile (dashed, unique markers and colors)
 for i, cls in enumerate(sensitive_classes):
     plt.plot(coverages, [pivot.loc[cls, c] for c in coverages],
-             linestyle='--', color=color_map(i), linewidth=2.5,
-             marker=fragile_markers[i], markersize=10, label=cls)
-# Plot robust (solid, unique markers)
+             linestyle='--', color=colors[i], linewidth=2.5,
+             marker='o', markersize=8, markerfacecolor='white', markeredgewidth=2,
+             label=f'{cls} (sensitive)', alpha=0.8)
+
+# Plot robust (solid, unique markers and colors)
 for i, cls in enumerate(robust_classes):
     plt.plot(coverages, [pivot.loc[cls, c] for c in coverages],
-             linestyle='-', color=color_map(i+5), linewidth=2.5,
-             marker=robust_markers[i], markersize=10, label=cls)
+             linestyle='-', color=colors[i+5], linewidth=2.5,
+             marker='s', markersize=8, markerfacecolor='white', markeredgewidth=2,
+             label=f'{cls} (consistent)', alpha=0.8)
 
-plt.xlabel('Frame Coverage (%)', fontsize=18, fontweight='bold')
-plt.ylabel('Accuracy', fontsize=18, fontweight='bold')
-plt.title('Aliasing Sensitivity: Most Vulnerable (dashed) vs Robust (solid) Classes', fontsize=22, fontweight='bold', pad=20)
+plt.xlabel('Frame Coverage (%)', fontsize=16, fontweight='bold')
+plt.ylabel('Accuracy', fontsize=16, fontweight='bold')
+plt.title(f'VideoMAE: Aliasing Sensitivity Analysis\nMost Sensitive vs Most Consistent Classes (stride={best_stride})', fontsize=20, fontweight='bold', pad=20)
 
-# Legend outside
-plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), fontsize=14, frameon=True)
-plt.grid(True, linestyle=':', alpha=0.7)
+# Legend in two columns, outside
+plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), fontsize=12, frameon=True, ncol=2, fancybox=True, shadow=True)
+plt.grid(True, linestyle=':', alpha=0.6)
 plt.ylim(0, 1.05)
 plt.xlim(min(coverages), max(coverages))
-plt.xticks(coverages, [str(int(c)) for c in coverages], fontsize=14)
+plt.xticks(coverages, [f"{int(c)}%" for c in coverages], fontsize=14)
 plt.yticks(np.linspace(0, 1, 11), [f"{int(y*100)}" for y in np.linspace(0, 1, 11)], fontsize=14)
-plt.tight_layout(rect=[0, 0, 0.82, 1])
-plt.savefig("data/UCF101_data/results/videomae/per_class_representative.png", dpi=300)
+
+# Add some padding for the legend
+plt.tight_layout(rect=[0, 0.05, 1, 1])
+plt.savefig("data/UCF101_data/results/videomae/per_class_representative.png", dpi=300, bbox_inches='tight')
 plt.close()
 print("Saved: data/UCF101_data/results/videomae/per_class_representative.png")

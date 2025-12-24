@@ -8,7 +8,7 @@ Source CSV: data/UCF101_data/results/videomae/fine_tuned_videomae_ucf101_tempora
 - **Avg Time/Sample**: 0.0000s
 
 ## Best Efficiency Configuration (Accuracy per Second)
-- **Accuracy/Sec**: 0.00
+- **Accuracy/Sec**: 0.000
 - **Accuracy**: 0.0000
 - **Coverage**: 0%
 - **Stride**: 0
@@ -26,8 +26,10 @@ Configurations where accuracy cannot be improved without increasing latency.
 
 | Coverage | Stride | Accuracy | Avg Time (s) |
 |----------|--------|----------|______________|
-| 10% | 1 | 0.6298 | 0.0000 |
-| 25% | 1 | 0.7003 | 0.0000 |
-| 50% | 1 | 0.8133 | 0.0000 |
-| 75% | 1 | 0.8472 | 0.0000 |
+| 25% | 16 | 0.4192 | 0.0000 |
+| 100% | 16 | 0.7189 | 0.0000 |
+| 100% | 8 | 0.7838 | 0.0000 |
+| 50% | 4 | 0.7845 | 0.0000 |
+| 75% | 2 | 0.8459 | 0.0000 |
+| 100% | 2 | 0.8669 | 0.0000 |
 | 100% | 1 | 0.8690 | 0.0000 |

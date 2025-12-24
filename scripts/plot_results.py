@@ -46,18 +46,36 @@ def ensure_dir(path: Path) -> None:
 
 def plot_accuracy_vs_coverage(df: pd.DataFrame, out_dir: Path, model_name: str = "") -> Path:
     """Line plot: accuracy vs coverage for each stride."""
-    plt.figure(figsize=(8, 5))
+    plt.figure(figsize=(10, 6))
     for stride in sorted(df["stride"].unique()):
         subset = df[df["stride"] == stride].sort_values("coverage")
-        plt.plot(subset["coverage"], subset["accuracy"], marker="o", label=f"stride={stride}")
-    plt.xlabel("Coverage (%)")
-    plt.ylabel("Accuracy")
+        plt.plot(subset["coverage"], subset["accuracy"], marker="o", markersize=6, linewidth=2, label=f"stride={stride}")
+        
+        # Add accuracy labels on data points
+        for _, row in subset.iterrows():
+            plt.annotate(f"{row['accuracy']:.3f}", 
+                        (row['coverage'], row['accuracy']), 
+                        xytext=(3, 3), textcoords='offset points',
+                        fontsize=8, alpha=0.8)
+    
+    plt.xlabel("Coverage (%)", fontsize=12)
+    plt.ylabel("Accuracy", fontsize=12)
     title_prefix = f"{model_name} " if model_name else ""
-    plt.title(f"{title_prefix}Accuracy vs Coverage by Stride")
-    plt.legend()
-    plt.grid(True, alpha=0.3)
+    plt.title(f"{title_prefix}Accuracy vs Coverage by Stride", fontsize=14, fontweight='bold')
+    
+    # Improve y-axis formatting with more precision
+    plt.gca().yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x:.3f}'))
+    plt.ylim(bottom=max(0, df["accuracy"].min() - 0.05), top=min(1.0, df["accuracy"].max() + 0.05))
+    
+    # Add more grid lines for better readability
+    plt.grid(True, alpha=0.3, which='both')
+    plt.minorticks_on()
+    plt.grid(True, alpha=0.1, which='minor')
+    
+    plt.legend(loc='best', fontsize=10)
+    plt.tight_layout()
     out_path = out_dir / "accuracy_vs_coverage.png"
-    plt.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.savefig(out_path, dpi=300, bbox_inches="tight")
     plt.close()
     return out_path
 
@@ -65,9 +83,14 @@ def plot_accuracy_vs_coverage(df: pd.DataFrame, out_dir: Path, model_name: str =
 def plot_accuracy_heatmap(df: pd.DataFrame, out_dir: Path, model_name: str = "") -> Path:
     """Heatmap of accuracy by stride x coverage."""
     pivot = df.pivot(index="stride", columns="coverage", values="accuracy")
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(10, 8))
     if HAS_SEABORN:
-        ax = sns.heatmap(pivot, annot=True, fmt=".3f", cmap="RdYlGn", cbar_kws={"label": "Accuracy"})
+        ax = sns.heatmap(pivot, annot=True, fmt=".3f", cmap="RdYlGn", 
+                        cbar_kws={"label": "Accuracy", "shrink": 0.8}, 
+                        linewidths=0.5, annot_kws={"size": 10})
+        # Improve colorbar formatting
+        cbar = ax.collections[0].colorbar
+        cbar.ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x:.3f}'))
     else:
         # Minimal heatmap using imshow when seaborn is unavailable
         import numpy as np
@@ -80,13 +103,14 @@ def plot_accuracy_heatmap(df: pd.DataFrame, out_dir: Path, model_name: str = "")
         # Annotate cells
         for i in range(data.shape[0]):
             for j in range(data.shape[1]):
-                ax.text(j, i, f"{data[i, j]:.2f}", ha="center", va="center", color="black")
+                ax.text(j, i, f"{data[i, j]:.3f}", ha="center", va="center", color="black")
     title_prefix = f"{model_name} " if model_name else ""
-    plt.title(f"{title_prefix}Accuracy Heatmap (Stride vs Coverage)")
-    plt.ylabel("Stride")
-    plt.xlabel("Coverage (%)")
+    plt.title(f"{title_prefix}Accuracy Heatmap (Stride vs Coverage)", fontsize=14, fontweight='bold')
+    plt.ylabel("Stride", fontsize=12)
+    plt.xlabel("Coverage (%)", fontsize=12)
+    plt.tight_layout()
     out_path = out_dir / "accuracy_heatmap.png"
-    plt.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.savefig(out_path, dpi=300, bbox_inches="tight")
     plt.close()
     return out_path
 
@@ -98,19 +122,36 @@ def plot_accuracy_per_time(df: pd.DataFrame, out_dir: Path, model_name: str = ""
     df_eff["acc_per_sec"] = df_eff["accuracy"] / df_eff["avg_time"].replace(0, pd.NA)
     # Filter out NA values
     df_eff = df_eff.dropna(subset=["acc_per_sec"])
-    plt.figure(figsize=(8, 5))
+    plt.figure(figsize=(10, 6))
     for stride in sorted(df_eff["stride"].unique()):
         subset = df_eff[df_eff["stride"] == stride].sort_values("coverage")
         if not subset.empty:
-            plt.plot(subset["coverage"], subset["acc_per_sec"], marker="o", label=f"stride={stride}")
-    plt.xlabel("Coverage (%)")
-    plt.ylabel("Accuracy per second")
+            plt.plot(subset["coverage"], subset["acc_per_sec"], marker="o", markersize=6, linewidth=2, label=f"stride={stride}")
+            
+            # Add efficiency labels on data points
+            for _, row in subset.iterrows():
+                plt.annotate(f"{row['acc_per_sec']:.3f}", 
+                            (row['coverage'], row['acc_per_sec']), 
+                            xytext=(3, 3), textcoords='offset points',
+                            fontsize=8, alpha=0.8)
+    
+    plt.xlabel("Coverage (%)", fontsize=12)
+    plt.ylabel("Accuracy per second", fontsize=12)
     title_prefix = f"{model_name} " if model_name else ""
-    plt.title(f"{title_prefix}Efficiency: Accuracy/Time vs Coverage")
-    plt.legend()
-    plt.grid(True, alpha=0.3)
+    plt.title(f"{title_prefix}Efficiency: Accuracy/Time vs Coverage", fontsize=14, fontweight='bold')
+    
+    # Improve y-axis formatting
+    plt.gca().yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x:.3f}'))
+    
+    # Add more grid lines
+    plt.grid(True, alpha=0.3, which='both')
+    plt.minorticks_on()
+    plt.grid(True, alpha=0.1, which='minor')
+    
+    plt.legend(loc='best', fontsize=10)
+    plt.tight_layout()
     out_path = out_dir / "accuracy_per_second.png"
-    plt.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.savefig(out_path, dpi=300, bbox_inches="tight")
     plt.close()
     return out_path
 
@@ -118,8 +159,13 @@ def plot_accuracy_per_time(df: pd.DataFrame, out_dir: Path, model_name: str = ""
 def compute_pareto_frontier(df: pd.DataFrame) -> pd.DataFrame:
     """Extract Pareto-optimal (accuracy, latency) frontier.
     Points where you cannot improve accuracy without worsening latency (or vice versa).
+    If avg_time is 0, use stride as proxy for computational cost (higher stride = lower cost).
     """
-    df_sorted = df.sort_values("avg_time")
+    if df["avg_time"].max() == 0:
+        # Use stride as proxy: higher stride means fewer frames, lower computational cost
+        df_sorted = df.sort_values("stride", ascending=False)  # Sort by decreasing stride (increasing cost)
+    else:
+        df_sorted = df.sort_values("avg_time")
     frontier = []
     best_acc = -1.0
     for _, row in df_sorted.iterrows():
@@ -133,27 +179,43 @@ def compute_pareto_frontier(df: pd.DataFrame) -> pd.DataFrame:
 def plot_pareto_frontier(df: pd.DataFrame, out_dir: Path, model_name: str = "") -> Path:
     """Plot Pareto frontier: accuracy vs latency."""
     frontier = compute_pareto_frontier(df)
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(12, 8))
+    
+    use_stride = df["avg_time"].max() == 0
+    x_col = "stride" if use_stride else "avg_time"
+    x_label = "Stride (higher = lower computational cost)" if use_stride else "Avg Time per Sample (s)"
+    
     # Plot all points
-    plt.scatter(df["avg_time"], df["accuracy"], alpha=0.5, s=50, label="All configs", color="lightblue")
+    plt.scatter(df[x_col], df["accuracy"], alpha=0.6, s=80, label="All configurations", color="lightblue", edgecolors='black', linewidth=0.5)
     # Highlight frontier
-    plt.scatter(frontier["avg_time"], frontier["accuracy"], alpha=0.9, s=150, label="Pareto frontier", color="red", marker="*")
-    # Annotate frontier points
+    plt.scatter(frontier[x_col], frontier["accuracy"], alpha=1.0, s=200, label="Pareto frontier", color="red", marker="*", edgecolors='darkred', linewidth=1)
+    
+    # Annotate frontier points with accuracy values
     for _, row in frontier.iterrows():
+        label = f"c{int(row['coverage'])}s{int(row['stride'])}\n{row['accuracy']:.3f}"
         plt.annotate(
-            f"c{int(row['coverage'])}s{int(row['stride'])}",
-            (row["avg_time"], row["accuracy"]),
-            fontsize=8,
-            alpha=0.7
+            label,
+            (row[x_col], row["accuracy"]),
+            xytext=(5, 5), textcoords='offset points',
+            fontsize=9, alpha=0.9, ha='left',
+            bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8)
         )
-    plt.xlabel("Avg Time per Sample (s)")
-    plt.ylabel("Accuracy")
+    
+    plt.xlabel(x_label, fontsize=12)
+    plt.ylabel("Accuracy", fontsize=12)
     title_prefix = f"{model_name} " if model_name else ""
-    plt.title(f"{title_prefix}Pareto-Optimal Frontier: Accuracy vs Latency")
-    plt.legend()
-    plt.grid(True, alpha=0.3)
+    plt.title(f"{title_prefix}Pareto-Optimal Frontier: Accuracy vs Computational Cost", fontsize=14, fontweight='bold')
+    
+    # Improve axis formatting
+    plt.gca().yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x:.3f}'))
+    plt.grid(True, alpha=0.3, which='both')
+    plt.minorticks_on()
+    plt.grid(True, alpha=0.1, which='minor')
+    
+    plt.legend(loc='best', fontsize=10)
+    plt.tight_layout()
     out_path = out_dir / "pareto_frontier.png"
-    plt.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.savefig(out_path, dpi=300, bbox_inches="tight")
     plt.close()
     return out_path
 
@@ -185,16 +247,18 @@ def plot_per_class_aliasing_bar(df_per_class: pd.DataFrame, out_dir: Path, model
     if alias_summary.empty:
         return None
     top = alias_summary.head(15).set_index("class")
-    plt.figure(figsize=(10, 6))
-    top["aliasing_drop"].plot(kind="bar", color="tomato")
+    plt.figure(figsize=(10, 8))
+    top["aliasing_drop"].plot(kind="barh", color="coral", edgecolor="black", linewidth=0.5)
     title_prefix = f"{model_name} " if model_name else ""
-    plt.title(f"{title_prefix}Top 15 Aliasing-Sensitive Classes (Accuracy Drop 100% → 25%)")
-    plt.ylabel("Accuracy Drop")
-    plt.xlabel("Class")
-    plt.xticks(rotation=45, ha="right")
-    plt.grid(alpha=0.3)
-    out_path = out_dir / "per_class_aliasing_drop.png"
+    plt.title(f"{title_prefix}Top 15 Aliasing-Sensitive Classes\n(Accuracy Drop 100% → 25% Coverage)", fontsize=14, fontweight='bold')
+    plt.xlabel("Accuracy Drop", fontsize=12)
+    plt.ylabel("Class", fontsize=12)
+    plt.grid(axis='x', alpha=0.3)
+    # Add value labels
+    for i, v in enumerate(top["aliasing_drop"]):
+        plt.text(v + 0.005, i, f"{v:.3f}", va='center', fontsize=9)
     plt.tight_layout()
+    out_path = out_dir / "per_class_aliasing_drop.png"
     plt.savefig(out_path, dpi=160, bbox_inches="tight")
     plt.close()
     return out_path
@@ -311,7 +375,7 @@ def write_summary_md(summary: dict, out_dir: Path, source_csv: Path) -> Path:
     be = summary["best_efficiency"]
     lines.append("## Best Efficiency Configuration (Accuracy per Second)\n")
     lines.append(
-        f"- **Accuracy/Sec**: {be['acc_per_sec']:.2f}\n"
+        f"- **Accuracy/Sec**: {be['acc_per_sec']:.3f}\n"
         f"- **Accuracy**: {be['accuracy']:.4f}\n"
         f"- **Coverage**: {be['coverage']}%\n"
         f"- **Stride**: {be['stride']}\n"

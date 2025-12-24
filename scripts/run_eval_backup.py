@@ -292,7 +292,7 @@ def main():
                     else:
                         existing_df = new_row
                     os.makedirs(os.path.dirname(out_path), exist_ok=True)
-                    existing_df.to_csv(out_path, index=False)
+                    existing_df.to_csv(out_path, index=False, float_format='%.6f')
                     print(f"✓ Saved: stride={stride} cov={coverage}% -> acc={acc:.4f}")
         df_results = existing_df if existing_df is not None else pd.DataFrame()
     elif pending_configs:
@@ -322,7 +322,7 @@ def main():
                 else:
                     existing_df = result
                 os.makedirs(os.path.dirname(out_path), exist_ok=True)
-                existing_df.to_csv(out_path, index=False)
+                existing_df.to_csv(out_path, index=False, float_format='%.6f')
                 print(f"✓ Saved: stride={stride} cov={coverage}% -> acc={result.iloc[0]['accuracy']:.4f}")
         df_results = existing_df if existing_df is not None else pd.DataFrame()
     else:
@@ -332,7 +332,7 @@ def main():
     # Final save (redundant but safe)
     if not ddp or rank == 0:
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
-        df_results.to_csv(out_path, index=False)
+        df_results.to_csv(out_path, index=False, float_format='%.6f')
 
     # Gather results to rank 0 and log to WandB (for DDP)
     if ddp and world_size > 1:
@@ -418,7 +418,7 @@ def main():
         # Save and log only on rank 0
         if not ddp or rank == 0:
             os.makedirs(os.path.dirname(per_class_out), exist_ok=True)
-            df_per_class.to_csv(per_class_out, index=False)
+            df_per_class.to_csv(per_class_out, index=False, float_format='%.6f')
             print(f"✅ Saved per-class results: {len(df_per_class)} rows")
 
         if not args.no_wandb and (not ddp or rank == 0):
