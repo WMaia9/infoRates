@@ -18,6 +18,7 @@ from info_rates.analysis.evaluate import (
     per_class_analysis_fast,
 )
 from info_rates.analysis.evaluate_fixed import evaluate_fixed_parallel_counts
+from scripts.dataset_handler import DatasetHandler
 
 # Optional: plotting (requires matplotlib, seaborn)
 try:
@@ -55,6 +56,7 @@ def compute_pareto(df: pd.DataFrame) -> pd.DataFrame:
 def main():
     parser = argparse.ArgumentParser(description="Evaluate temporal sampling effects on fixed-length clips.")
     parser.add_argument("--config", type=str, default="config.yaml", help="Path to config file")
+    parser.add_argument("--dataset", type=str, default="ucf101", choices=["ucf101", "kinetics400", "hmdb51"], help="Dataset to evaluate on")
     parser.add_argument("--model-path", type=str, help="Path to saved model directory")
     parser.add_argument("--manifest", type=str, help="CSV manifest with columns: video_path,label")
     parser.add_argument("--coverages", nargs="*", type=int)
@@ -73,6 +75,11 @@ def main():
     parser.add_argument("--jitter-coverage-pct", type=float, help="Randomly jitter coverage ±pct during eval for robustness checks")
     args = parser.parse_args()
 
+    # Get dataset configuration
+    dataset_name = args.dataset
+    dataset_config = DatasetHandler.get_dataset_config(dataset_name)
+    dataset_defaults = DatasetHandler.get_model_defaults(dataset_name)
+
     # Load config and apply defaults
     if os.path.exists(args.config):
         with open(args.config, "r") as f:
@@ -80,8 +87,9 @@ def main():
     else:
         cfg = {}
 
-    model_path = args.model_path or cfg.get("save_path", "models/timesformer_ucf101_ddp")
-    manifest = args.manifest or cfg.get("eval_manifest", "data/UCF101_data/manifests/ucf101_50f.csv")
+    # Set dataset-specific defaults
+    model_path = args.model_path or cfg.get("save_path", f"fine_tuned_models/fine_tuned_timesformer_{dataset_name}")
+    manifest = args.manifest or DatasetHandler.get_default_manifest(dataset_name)
     coverages = args.coverages if args.coverages else cfg.get("eval_coverages", [10, 25, 50, 75, 100])
     strides = args.strides if args.strides else cfg.get("eval_strides", [1, 2, 4, 8, 16])
     sample_size = args.sample_size if args.sample_size is not None else int(cfg.get("eval_sample_size", 200))
@@ -90,7 +98,7 @@ def main():
 
 
     # Derive per-model default output paths when not explicitly provided
-    default_results_dir = cfg.get("eval_results_dir", "data/UCF101_data/results")
+    default_results_dir = dataset_config["results_dir"]
     model_tag = os.path.basename(os.path.normpath(model_path))
     # Extract model name (timesformer, videomae, vivit) from model_tag
     model_name = "timesformer" if "timesformer" in model_tag.lower() else \
@@ -109,7 +117,7 @@ def main():
     else:
         eval_num_frames = 8
 
-    wandb_project = args.wandb_project or cfg.get("wandb_project", "inforates-ucf101")
+    wandb_project = args.wandb_project or dataset_config["wandb_project"]
     wandb_run_name = args.wandb_run_name or cfg.get("eval_wandb_run_name")
     ddp = args.ddp or bool(cfg.get("use_ddp", False))
     do_per_class = args.per_class or bool(cfg.get("eval_per_class", False))
@@ -152,8 +160,8 @@ def main():
             config={
                 "model_name": model_name,
                 "model_path": model_path,
-                "manifest": args.manifest,
-                "dataset": os.path.basename(args.manifest).replace('.csv', ''),
+                "manifest": manifest_path,
+                "dataset": dataset_name,
                 "coverages": coverages,
                 "strides": strides,
                 "sample_size": sample_size,
@@ -168,7 +176,9 @@ def main():
     processor = AutoImageProcessor.from_pretrained(model_path, use_fast=True)
     model = AutoModelForVideoClassification.from_pretrained(model_path).to(device).eval()
 
-    df = pd.read_csv(manifest)
+    # Load or build manifest for the dataset
+    df, manifest_path = DatasetHandler.load_or_build_manifest(dataset_name)
+    print(f"Loaded dataset: {dataset_name} with {len(df)} samples")
 
     # Check for existing results to enable resume/checkpoint
     completed_configs = set()
@@ -371,8 +381,8 @@ def main():
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
         df_results.to_csv(out_path, index=False, float_format='%.6f')
 
-    # Gather results to rank 0 and log to WandB (for DDP)
-    if ddp and world_size > 1:
+    # Gather results to rank 0 and log to WandB (for DDP) - only if we actually evaluated new configs
+    if ddp and world_size > 1 and pending_configs:
         # Gather df_results from all ranks to rank 0
         import pickle
         gathered_results = [None for _ in range(world_size)]
@@ -435,7 +445,7 @@ def main():
             coverages=my_coverages,
             strides=my_strides,
             sample_size=subset_size,
-            batch_size=max(32, batch_size),  # Use larger batches for per-class (faster)
+            batch_size=batch_size,  # Use the specified batch size
             num_workers=workers,
             rank=rank,
             num_frames=model_num_frames,  # Pass correct frame count

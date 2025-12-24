@@ -312,6 +312,19 @@ def per_class_analysis_fast(
                 pass
     device = next(model.parameters()).device
 
+    # Warm up the model to avoid memory spike during first inference
+    if rank == 0:
+        print("Warming up model...")
+    dummy_frames = [np.random.randint(0, 255, (224, 224, 3), dtype=np.uint8) for _ in range(num_frames)]
+    with torch.amp.autocast(device.type, dtype=torch.float16):
+        dummy_inputs = processor(dummy_frames, return_tensors="pt").to(device)
+        _ = model(**dummy_inputs).logits
+    del dummy_inputs, dummy_frames
+    if device.type == "cuda":
+        torch.cuda.empty_cache()
+    if rank == 0:
+        print("Model warmed up.")
+
     id2label = model.config.id2label
     label2id = model.config.label2id
     n_classes = len(id2label)
@@ -326,7 +339,8 @@ def per_class_analysis_fast(
             total_per_class = np.zeros(n_classes, dtype=np.int32)
             t0 = time.time()
 
-            with ThreadPoolExecutor(max_workers=num_workers) as ex:
+            # Process videos with controlled parallelism to balance speed and memory usage
+            with ThreadPoolExecutor(max_workers=min(4, num_workers)) as ex:  # Limit workers to prevent memory explosion
                 futures = [ex.submit(extract_and_prepare, row._asdict() if hasattr(row, "_asdict") else row.to_dict(), cov, stride, num_select=num_frames) for _, row in subset.iterrows()]
 
                 batch_frames, batch_labels = [], []
@@ -337,7 +351,7 @@ def per_class_analysis_fast(
                     batch_frames.append(frames)
                     batch_labels.append(label)
 
-                    if len(batch_frames) == batch_size:
+                    if len(batch_frames) >= batch_size:  # Process when batch is full
                         with torch.amp.autocast(device.type, dtype=torch.float16):
                             inputs = processor(batch_frames, return_tensors="pt").to(device)
                             logits = model(**inputs).logits
@@ -349,9 +363,11 @@ def per_class_analysis_fast(
                             total_per_class[true_id] += 1
                             if p == true_id:
                                 correct_per_class[true_id] += 1
-                        batch_frames, batch_labels = [], []
+                        batch_frames, batch_labels = [], []  # Clear batch immediately
                         # Release tensor references to prevent memory leak
                         del inputs, logits, preds
+                        if device.type == "cuda":
+                            torch.cuda.empty_cache()  # Clear cache after each batch
 
                 if batch_frames:
                     with torch.amp.autocast(device.type, dtype=torch.float16):

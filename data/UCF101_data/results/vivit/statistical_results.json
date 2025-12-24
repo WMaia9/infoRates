@@ -1,0 +1,26 @@
+{
+  "anova_coverage": {
+    "f_statistic": 42.09040008059867,
+    "p_value": 1.1557393295190647e-32,
+    "eta_squared": 0.14348654351406745
+  },
+  "anova_stride": {
+    "f_statistic": 1.5909695003335065,
+    "p_value": 0.17448244126275522,
+    "eta_squared": 0.006292372250737651
+  },
+  "aliasing_sensitivity": {
+    "mean_drop": 0.13019534653465348,
+    "std_drop": 0.15205565156592082,
+    "max_drop": 0.5614678,
+    "min_drop": -0.3627118
+  },
+  "variance_homogeneity": {
+    "levene_statistic": 18.458649072310003,
+    "p_value": 1.1954064251748079e-14
+  },
+  "effect_sizes": {
+    "aliasing_cohens_d": 1.0503395963022333,
+    "stride_cohens_d": 0.2237191011586574
+  }
+}

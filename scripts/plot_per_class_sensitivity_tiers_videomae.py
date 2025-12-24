@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Load per-class results
-csv_path = "data/UCF101_data/results/videomae/fine_tuned_videomae_ucf101_per_class_testset.csv"
+csv_path = "data/UCF101_data/results/vivit/fine_tuned_vivit_ucf101_per_class_testset.csv"
 df = pd.read_csv(csv_path)
 
 # Aggregate duplicates
@@ -38,10 +38,10 @@ if 100 in pivot.columns and 25 in pivot.columns:
         ax.tick_params(axis='x', rotation=45)
         ax.grid(axis='y', alpha=0.3)
     
-    plt.suptitle('Per-Class Sensitivity Tiers to Aliasing (VideoMAE)', fontsize=16)
+    plt.suptitle('Per-Class Sensitivity Tiers to Aliasing (ViViT)', fontsize=16)
     plt.tight_layout()
-    plt.savefig("data/UCF101_data/results/videomae/per_class_sensitivity_tiers.png", dpi=300)
+    plt.savefig("data/UCF101_data/results/vivit/per_class_sensitivity_tiers.png", dpi=300)
     plt.close()
-    print("Saved: data/UCF101_data/results/videomae/per_class_sensitivity_tiers.png")
+    print("Saved: data/UCF101_data/results/vivit/per_class_sensitivity_tiers.png")
 else:
     print("Missing coverage levels for sensitivity analysis")

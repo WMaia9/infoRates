@@ -12,7 +12,7 @@ except ImportError:
     HAS_SEABORN = False
 
 # Load per-class results
-csv_path = "data/UCF101_data/results/videomae/fine_tuned_videomae_ucf101_per_class_testset.csv"
+csv_path = "data/UCF101_data/results/vivit/fine_tuned_vivit_ucf101_per_class_testset.csv"
 df = pd.read_csv(csv_path)
 
 # Find the best stride (highest mean accuracy across all classes and coverages)
@@ -67,7 +67,7 @@ for i, cls in enumerate(robust_classes):
 
 plt.xlabel('Frame Coverage (%)', fontsize=16, fontweight='bold')
 plt.ylabel('Accuracy', fontsize=16, fontweight='bold')
-plt.title(f'VideoMAE: Aliasing Sensitivity Analysis\nMost Sensitive vs Most Consistent Classes (stride={best_stride})', fontsize=20, fontweight='bold', pad=20)
+plt.title(f'ViViT: Aliasing Sensitivity Analysis\nMost Sensitive vs Most Consistent Classes (stride={best_stride})', fontsize=20, fontweight='bold', pad=20)
 
 # Legend in two columns, outside
 plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), fontsize=12, frameon=True, ncol=2, fancybox=True, shadow=True)
@@ -79,6 +79,6 @@ plt.yticks(np.linspace(0, 1, 11), [f"{int(y*100)}" for y in np.linspace(0, 1, 11
 
 # Add some padding for the legend
 plt.tight_layout(rect=[0, 0.05, 1, 1])
-plt.savefig("data/UCF101_data/results/videomae/per_class_representative.png", dpi=300, bbox_inches='tight')
+plt.savefig("data/UCF101_data/results/vivit/per_class_representative.png", dpi=300, bbox_inches='tight')
 plt.close()
-print("Saved: data/UCF101_data/results/videomae/per_class_representative.png")
+print("Saved: data/UCF101_data/results/vivit/per_class_representative.png")
