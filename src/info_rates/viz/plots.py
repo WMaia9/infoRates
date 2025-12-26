@@ -25,7 +25,8 @@ def plot_accuracy_curves(df_results: pd.DataFrame, output_dir: str = "UCF101_dat
 def plot_heatmap(df_results: pd.DataFrame, output_dir: str = "UCF101_data/results"):
     """Plot heatmap and save to file."""
     os.makedirs(output_dir, exist_ok=True)
-    pivot = df_results.pivot(index="coverage", columns="stride", values="accuracy")
+    # Handle potential duplicates by taking the mean
+    pivot = df_results.groupby(['coverage', 'stride'])['accuracy'].mean().reset_index().pivot(index="coverage", columns="stride", values="accuracy")
     plt.figure(figsize=(7, 5))
     sns.heatmap(pivot, annot=True, cmap="viridis", fmt=".3f")
     plt.title("Accuracy Heatmap: Coverage vs Stride")

@@ -153,9 +153,9 @@ def evaluate_fixed_parallel(
                                                 with torch.amp.autocast(device.type, dtype=torch.float16):
                                                     inputs = processor(batch_frames, return_tensors="pt").to(device)
                                                     logits = model(**inputs).logits
-                                                preds = [model.config.id2label[i] for i in logits.argmax(-1).cpu().numpy()]
+                                                preds = logits.argmax(-1).cpu().numpy()  # Keep as integers
                                                 for p, l in zip(preds, batch_labels):
-                                                    if norm_label(p) == norm_label(l):
+                                                    if int(p) == int(l):  # Compare integers directly
                                                         correct += 1
                                                 total += len(batch_labels)
                                                 batch_frames, batch_labels = [], []
@@ -166,9 +166,9 @@ def evaluate_fixed_parallel(
                                             with torch.amp.autocast(device.type, dtype=torch.float16):
                                                 inputs = processor(batch_frames, return_tensors="pt").to(device)
                                                 logits = model(**inputs).logits
-                                            preds = [model.config.id2label[i] for i in logits.argmax(-1).cpu().numpy()]
+                                            preds = logits.argmax(-1).cpu().numpy()  # Keep as integers
                                             for p, l in zip(preds, batch_labels):
-                                                if norm_label(p) == norm_label(l):
+                                                if int(p) == int(l):  # Compare integers directly
                                                     correct += 1
                                             total += len(batch_labels)
                                             # Release tensor references to prevent memory leak
@@ -357,9 +357,9 @@ def per_class_analysis_fast(
                             logits = model(**inputs).logits
                         preds = logits.argmax(-1).cpu().numpy()
                         for p, l in zip(preds, batch_labels):
-                            if l not in label2id:
+                            if l not in id2label:
                                 continue
-                            true_id = label2id[l]
+                            true_id = l
                             total_per_class[true_id] += 1
                             if p == true_id:
                                 correct_per_class[true_id] += 1
@@ -402,8 +402,9 @@ def per_class_analysis_fast(
 
             avg_time = (time.time() - t0) / np.maximum(1, total_per_class.sum())
             mean_acc = accs[total_per_class > 0].mean() if (total_per_class > 0).any() else 0.0
+            sd_acc = accs[total_per_class > 0].std() if (total_per_class > 0).any() else 0.0
             if rank == 0:
-                pass
+                print(f"[PER-CLASS RESULT] stride={stride} cov={cov}% -> mean_acc={mean_acc:.4f}, sd_acc={sd_acc:.4f}, total_samples={total_per_class.sum()}")
 
             # Save checkpoint after each config
             if checkpoint_path is not None and rank == 0:
@@ -445,9 +446,9 @@ def per_class_analysis_fast(
                             logits = model(**inputs).logits
                         preds = logits.argmax(-1).cpu().numpy()
                         for p, l in zip(preds, batch_labels):
-                            if l not in label2id:
+                            if l not in id2label:
                                 continue
-                            true_id = label2id[l]
+                            true_id = l
                             total_per_class[true_id] += 1
                             if p == true_id:
                                 correct_per_class[true_id] += 1

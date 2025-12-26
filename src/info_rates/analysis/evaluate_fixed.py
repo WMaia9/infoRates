@@ -76,9 +76,9 @@ def evaluate_fixed_parallel(
                         with torch.amp.autocast(device.type, dtype=torch.float16):
                             inputs = processor(batch_frames, return_tensors="pt").to(device)
                             logits = model(**inputs).logits
-                        preds = [model.config.id2label[i] for i in logits.argmax(-1).cpu().numpy()]
+                        preds = logits.argmax(-1).cpu().numpy()  # Keep as integers
                         for p, l in zip(preds, batch_labels):
-                            if norm_label(p) == norm_label(l):
+                            if int(p) == int(l):  # Compare integers directly
                                 correct += 1
                         total += len(batch_labels)
                         batch_frames, batch_labels = [], []
@@ -93,9 +93,9 @@ def evaluate_fixed_parallel(
                     with torch.amp.autocast(device.type, dtype=torch.float16):
                         inputs = processor(batch_frames, return_tensors="pt").to(device)
                         logits = model(**inputs).logits
-                    preds = [model.config.id2label[i] for i in logits.argmax(-1).cpu().numpy()]
+                    preds = logits.argmax(-1).cpu().numpy()  # Keep as integers
                     for p, l in zip(preds, batch_labels):
-                        if norm_label(p) == norm_label(l):
+                        if int(p) == int(l):  # Compare integers directly
                             correct += 1
                     total += len(batch_labels)
                     # MEMORY FIX: Clear GPU tensors to prevent memory leak
@@ -148,11 +148,29 @@ def evaluate_fixed_parallel_counts(
     id2label = getattr(model.config, 'id2label', None)
     label2id = getattr(model.config, 'label2id', None)
     n_classes = len(id2label) if id2label is not None else 0
-    # print("[DEBUG] id2label:", id2label, flush=True)
-    # print("[DEBUG] label2id:", label2id, flush=True)
-    # print("[DEBUG] n_classes:", n_classes, flush=True)
-    if not id2label or not label2id:
-        print("[ERROR] Model config is missing id2label or label2id! Check model checkpoint.", flush=True)
+
+    # Check if labels are integers (Kinetics400 case) or strings (UCF101 case)
+    sample_labels = subset['label'].unique()[:10]
+    labels_are_integers = all(str(l).isdigit() for l in sample_labels)
+
+    if labels_are_integers:
+        # For integer labels (Kinetics400), create direct mapping
+        print(f"[INFO] Detected integer labels, using direct integer mapping for {n_classes} classes")
+        def get_class_id(label):
+            return int(label)
+        def get_class_name(class_id):
+            return id2label[class_id] if id2label and class_id < len(id2label) else f"class_{class_id}"
+    else:
+        # For string labels (UCF101), use model's label2id mapping
+        print(f"[INFO] Detected string labels, using model label2id mapping")
+        def get_class_id(label):
+            return label2id.get(norm_label(label), -1)
+        def get_class_name(class_id):
+            return id2label[class_id] if id2label and class_id < len(id2label) else f"class_{class_id}"
+
+    if not id2label:
+        print("[ERROR] Model config is missing id2label! Check model checkpoint.", flush=True)
+        return pd.DataFrame()
     # Print a sample of manifest labels
     # print("[DEBUG] Sample manifest labels:", subset['label'].unique()[:10], flush=True)
 
@@ -189,9 +207,9 @@ def evaluate_fixed_parallel_counts(
                             logits = model(**inputs).logits
                         preds = logits.argmax(-1).cpu().numpy()
                         for p, l in zip(preds, batch_labels):
-                            if l not in label2id:
+                            true_id = get_class_id(l)
+                            if true_id == -1:
                                 continue
-                            true_id = label2id[l]
                             total_per_class[true_id] += 1
                             if p == true_id:
                                 correct_per_class[true_id] += 1
@@ -207,9 +225,9 @@ def evaluate_fixed_parallel_counts(
                         logits = model(**inputs).logits
                     preds = logits.argmax(-1).cpu().numpy()
                     for p, l in zip(preds, batch_labels):
-                        if l not in label2id:
+                        true_id = get_class_id(l)
+                        if true_id == -1:
                             continue
-                        true_id = label2id[l]
                         total_per_class[true_id] += 1
                         if p == true_id:
                             correct_per_class[true_id] += 1
@@ -222,7 +240,7 @@ def evaluate_fixed_parallel_counts(
             for i in range(n_classes):
                 if total_per_class[i] > 0:
                     results.append({
-                        "class": id2label[i],
+                        "class": get_class_name(i),
                         "coverage": cov,
                         "stride": stride,
                         "accuracy": float(accs[i]),

@@ -1,3 +1,12 @@
+# Ensure project root and src/ are on sys.path for direct script execution
+import os
+import sys
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_SRC_ROOT = os.path.join(_PROJECT_ROOT, "src")
+for _p in (_PROJECT_ROOT, _SRC_ROOT):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
 import argparse
 import math
 import os
@@ -56,7 +65,7 @@ def compute_pareto(df: pd.DataFrame) -> pd.DataFrame:
 def main():
     parser = argparse.ArgumentParser(description="Evaluate temporal sampling effects on fixed-length clips.")
     parser.add_argument("--config", type=str, default="config.yaml", help="Path to config file")
-    parser.add_argument("--dataset", type=str, default="ucf101", choices=["ucf101", "kinetics400", "hmdb51"], help="Dataset to evaluate on")
+    parser.add_argument("--dataset", type=str, choices=["ucf101", "kinetics400", "hmdb51"], help="Dataset to evaluate on (overrides config.yaml)")
     parser.add_argument("--model-path", type=str, help="Path to saved model directory")
     parser.add_argument("--manifest", type=str, help="CSV manifest with columns: video_path,label")
     parser.add_argument("--coverages", nargs="*", type=int)
@@ -75,11 +84,6 @@ def main():
     parser.add_argument("--jitter-coverage-pct", type=float, help="Randomly jitter coverage ±pct during eval for robustness checks")
     args = parser.parse_args()
 
-    # Get dataset configuration
-    dataset_name = args.dataset
-    dataset_config = DatasetHandler.get_dataset_config(dataset_name)
-    dataset_defaults = DatasetHandler.get_model_defaults(dataset_name)
-
     # Load config and apply defaults
     if os.path.exists(args.config):
         with open(args.config, "r") as f:
@@ -87,8 +91,14 @@ def main():
     else:
         cfg = {}
 
+    # Get dataset configuration (use config.yaml dataset as default, command-line overrides)
+    dataset_name = args.dataset or cfg.get("dataset", "ucf101")
+    dataset_config = DatasetHandler.get_dataset_config(dataset_name)
+    dataset_defaults = DatasetHandler.get_model_defaults(dataset_name)
+
     # Set dataset-specific defaults
-    model_path = args.model_path or cfg.get("save_path", f"fine_tuned_models/fine_tuned_timesformer_{dataset_name}")
+    model_name = cfg.get("model_name", "timesformer")
+    model_path = args.model_path or cfg.get("save_path", f"fine_tuned_models/fine_tuned_{model_name}_{dataset_name}")
     manifest = args.manifest or DatasetHandler.get_default_manifest(dataset_name)
     coverages = args.coverages if args.coverages else cfg.get("eval_coverages", [10, 25, 50, 75, 100])
     strides = args.strides if args.strides else cfg.get("eval_strides", [1, 2, 4, 8, 16])
@@ -152,7 +162,14 @@ def main():
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    # Initialize WandB (only rank 0 when DDP)
+    processor = AutoImageProcessor.from_pretrained(model_path, use_fast=True)
+    model = AutoModelForVideoClassification.from_pretrained(model_path).to(device).eval()
+
+    # Load or build manifest for the dataset
+    df, manifest_path = DatasetHandler.load_or_build_manifest(dataset_name)
+    print(f"Loaded dataset: {dataset_name} with {len(df)} samples")
+
+    # Initialize WandB (only rank 0 when DDP) - after manifest is loaded
     if wandb is not None and not args.no_wandb and (not ddp or rank == 0):
         wandb.init(
             project=wandb_project,
@@ -173,15 +190,11 @@ def main():
             }
         )
 
-    processor = AutoImageProcessor.from_pretrained(model_path, use_fast=True)
-    model = AutoModelForVideoClassification.from_pretrained(model_path).to(device).eval()
-
-    # Load or build manifest for the dataset
-    df, manifest_path = DatasetHandler.load_or_build_manifest(dataset_name)
     print(f"Loaded dataset: {dataset_name} with {len(df)} samples")
 
     # Check for existing results to enable resume/checkpoint
     completed_configs = set()
+    existing_df = None  # Initialize
     if os.path.exists(out_path):
         try:
             existing_df = pd.read_csv(out_path)
@@ -205,27 +218,16 @@ def main():
         except Exception as e:
             if not ddp or rank == 0:
                 print(f"Warning: Could not load existing results from {out_path}: {e}")
-
-    # Filter out already-completed configs
-    pending_configs = [(c, s) for c in coverages for s in strides if (c, s) not in completed_configs]
-    existing_df = None  # Ensure this is always defined
-    if not pending_configs and not args.per_class:
+            existing_df = None
+    
+    # Calculate pending configurations
+    all_configs = set((c, s) for c in coverages for s in strides)
+    pending_configs = all_configs - completed_configs
+    
+    # Prioritize per-class analysis when requested
+    if args.per_class:
         if not ddp or rank == 0:
-            print("All configurations already completed. Nothing to evaluate.")
-        if wandb is not None and not args.no_wandb and (not ddp or rank == 0):
-            wandb.finish()
-        if ddp:
-            dist.destroy_process_group()
-        return
-
-    # Extract only pending coverages and strides
-    pending_coverages = sorted(set(c for c, s in pending_configs)) if pending_configs else []
-    pending_strides = sorted(set(s for c, s in pending_configs)) if pending_configs else []
-
-    # If no pending configs but per-class is requested, load existing results
-    if not pending_configs and args.per_class:
-        if not ddp or rank == 0:
-            print(f"No pending configs. Loading existing results for per-class analysis...")
+            print("Per-class analysis requested. Loading existing results...")
         if existing_df is None and os.path.exists(out_path):
             existing_df = pd.read_csv(out_path)
         if existing_df is not None and not existing_df.empty:
@@ -239,6 +241,22 @@ def main():
             if ddp:
                 dist.destroy_process_group()
             return
+    elif not pending_configs:
+        if not ddp or rank == 0:
+            print("All configurations already completed. Nothing to evaluate.")
+        if wandb is not None and not args.no_wandb and (not ddp or rank == 0):
+            wandb.finish()
+        if ddp:
+            dist.destroy_process_group()
+        return
+
+    # Extract only pending coverages and strides (only needed for main evaluation)
+    if not args.per_class:
+        pending_coverages = sorted(set(c for c, s in pending_configs)) if pending_configs else []
+        pending_strides = sorted(set(s for c, s in pending_configs)) if pending_configs else []
+    else:
+        pending_coverages = []
+        pending_strides = []
 
     if not ddp or rank == 0:
         print(f"Evaluating {len(pending_configs)} pending configurations...")
@@ -312,6 +330,89 @@ def main():
                     print(f"[RESULT] stride={stride} cov={coverage}% -> acc={acc:.4f}", flush=True)
                 # print(f"[DEBUG] Rank {rank} COMPLETE stride={stride} cov={coverage}%", flush=True)
         df_results = existing_df if existing_df is not None else pd.DataFrame()
+    elif pending_configs and ddp and world_size > 1:
+        # DDP main evaluation: shard data across ranks
+        my_subset = subset.iloc[rank::world_size]
+        all_rows = []
+        processed_configs = set(completed_configs)
+        failed_configs = set()
+        for stride in pending_strides:
+            for coverage in pending_coverages:
+                if (coverage, stride) in processed_configs:
+                    # print(f"[DEBUG] Skipping already processed stride={stride} cov={coverage}%", flush=True)
+                    continue
+                # print(f"[DEBUG] Processing stride={stride} cov={coverage}%", flush=True)
+                try:
+                    result = evaluate_fixed_parallel(
+                        df=my_subset,
+                        processor=processor,
+                        model=model,
+                        coverages=[coverage],
+                        strides=[stride],
+                        sample_size=sample_size,
+                        batch_size=batch_size,
+                        num_workers=workers,
+                        jitter_coverage_pct=jitter_coverage_pct,
+                        rank=rank,
+                        num_frames=eval_num_frames,
+                    )
+                    # print(f"[DEBUG] Type of result: {type(result)}", flush=True)
+                    # print(f"[DEBUG] Content of result: {result}", flush=True)
+                    # Handle both DataFrame and list return types
+                    valid = False
+                    local_correct = local_total = local_time_sum = 0
+                    if hasattr(result, 'iloc') and 'accuracy' in result.columns:
+                        row = result.iloc[0]
+                        local_correct = int(row['correct'])
+                        local_total = int(row['total'])
+                        local_time_sum = row['avg_time'] * local_total  # Convert avg_time back to total time
+                        valid = True
+                    elif isinstance(result, list) and len(result) > 0 and isinstance(result[0], dict) and 'accuracy' in result[0]:
+                        row = result[0]
+                        local_correct = int(row['correct'])
+                        local_total = int(row['total'])
+                        local_time_sum = row['avg_time'] * local_total  # Convert avg_time back to total time
+                        valid = True
+                    else:
+                        print(f"[WARNING] Invalid or empty result for stride={stride} cov={coverage}%, skipping save.", flush=True)
+                        valid = False
+
+                    if valid:
+                        # Aggregate results across ranks
+                        tensor = torch.tensor([local_correct, local_total, local_time_sum], dtype=torch.float32, device=device)
+                        dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
+                        global_correct = int(tensor[0].item())
+                        global_total = int(tensor[1].item())
+                        global_time_sum = float(tensor[2].item())
+                        global_acc = (global_correct / global_total) if global_total > 0 else 0.0
+                        global_avg_time = (global_time_sum / global_total) if global_total > 0 else 0.0
+                        result_df = pd.DataFrame([{
+                            "coverage": coverage,
+                            "stride": stride,
+                            "accuracy": global_acc,
+                            "avg_time": global_avg_time,
+                            "correct": global_correct,
+                            "total": global_total,
+                        }])
+                        acc_val = global_acc
+                    else:
+                        acc_val = 'N/A'
+
+                    # Save results (only rank 0 in DDP mode)
+                    if rank == 0:
+                        if existing_df is not None:
+                            existing_df = pd.concat([existing_df, result_df], ignore_index=True)
+                        else:
+                            existing_df = result_df
+                        os.makedirs(os.path.dirname(out_path), exist_ok=True)
+                        existing_df.to_csv(out_path, index=False, float_format='%.6f')
+                        print(f"[RESULT] stride={stride} cov={coverage}% -> acc={acc_val:.4f}", flush=True)
+                    processed_configs.add((coverage, stride))
+                except Exception as e:
+                    print(f"[ERROR] Exception for stride={stride} cov={coverage}%: {e}", flush=True)
+                    failed_configs.add((coverage, stride))
+                # print(f"[DEBUG] Processed configs so far: {processed_configs}", flush=True)
+        df_results = existing_df if existing_df is not None else pd.DataFrame()
     elif pending_configs:
         # Non-DDP: evaluate one config at a time
         all_rows = []
@@ -341,28 +442,60 @@ def main():
                     # print(f"[DEBUG] Content of result: {result}", flush=True)
                     # Handle both DataFrame and list return types
                     valid = False
+                    local_correct = local_total = local_time_sum = 0
                     if hasattr(result, 'iloc') and 'accuracy' in result.columns:
-                        all_rows.append(result.iloc[0])
-                        acc_val = result.iloc[0]['accuracy']
-                        result_df = result
+                        row = result.iloc[0]
+                        local_correct = int(row['correct'])
+                        local_total = int(row['total'])
+                        local_time_sum = row['avg_time'] * local_total  # Convert avg_time back to total time
                         valid = True
                     elif isinstance(result, list) and len(result) > 0 and isinstance(result[0], dict) and 'accuracy' in result[0]:
-                        all_rows.append(result[0])
-                        acc_val = result[0]['accuracy']
-                        result_df = pd.DataFrame(result)
+                        row = result[0]
+                        local_correct = int(row['correct'])
+                        local_total = int(row['total'])
+                        local_time_sum = row['avg_time'] * local_total  # Convert avg_time back to total time
                         valid = True
                     else:
                         print(f"[WARNING] Invalid or empty result for stride={stride} cov={coverage}%, skipping save.", flush=True)
-                        acc_val = 'N/A'
-                        result_df = None
+                        valid = False
+
                     if valid:
-                        if existing_df is not None:
-                            existing_df = pd.concat([existing_df, result_df], ignore_index=True)
+                        if ddp:
+                            # Aggregate results across ranks
+                            tensor = torch.tensor([local_correct, local_total, local_time_sum], dtype=torch.float32, device=device)
+                            dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
+                            global_correct = int(tensor[0].item())
+                            global_total = int(tensor[1].item())
+                            global_time_sum = float(tensor[2].item())
+                            global_acc = (global_correct / global_total) if global_total > 0 else 0.0
+                            global_avg_time = (global_time_sum / global_total) if global_total > 0 else 0.0
+                            result_df = pd.DataFrame([{
+                                "coverage": coverage,
+                                "stride": stride,
+                                "accuracy": global_acc,
+                                "avg_time": global_avg_time,
+                                "correct": global_correct,
+                                "total": global_total,
+                            }])
+                            acc_val = global_acc
                         else:
-                            existing_df = result_df
-                        os.makedirs(os.path.dirname(out_path), exist_ok=True)
-                        existing_df.to_csv(out_path, index=False, float_format='%.6f')
-                        # print(f"[DEBUG] Saved stride={stride} cov={coverage}% -> acc={acc_val}", flush=True)
+                            # Non-DDP: use local results directly
+                            if hasattr(result, 'iloc'):
+                                result_df = result
+                                acc_val = result.iloc[0]['accuracy']
+                            else:
+                                result_df = pd.DataFrame(result)
+                                acc_val = result[0]['accuracy']
+
+                        # Save results (only rank 0 in DDP mode)
+                        if not ddp or rank == 0:
+                            if existing_df is not None:
+                                existing_df = pd.concat([existing_df, result_df], ignore_index=True)
+                            else:
+                                existing_df = result_df
+                            os.makedirs(os.path.dirname(out_path), exist_ok=True)
+                            existing_df.to_csv(out_path, index=False, float_format='%.6f')
+                            # print(f"[DEBUG] Saved stride={stride} cov={coverage}% -> acc={acc_val}", flush=True)
                     processed_configs.add((coverage, stride))
                 except Exception as e:
                     print(f"[ERROR] Exception for stride={stride} cov={coverage}%: {e}", flush=True)
@@ -419,9 +552,20 @@ def main():
 
     # Optional per-class analysis - use both GPUs by splitting configs
     if do_per_class:
+        if not ddp or rank == 0:
+            print("Starting per-class analysis...")
+        
+        # Clear GPU memory before per-class analysis
+        if device == "cuda":
+            torch.cuda.empty_cache()
+        
         subset_size = len(df) if per_class_sample_size <= 0 else min(per_class_sample_size, len(df))
         # Get model's expected frame count from config
         model_num_frames = model.config.num_frames if hasattr(model.config, 'num_frames') else 16
+        
+        # Prepare data subset for per-class analysis
+        # For per-class analysis, ALL ranks need ALL data to compute global class statistics
+        per_class_subset = df  # Use full dataset on all ranks
         
         # Split configs across ranks for parallel processing
         all_configs = [(c, s) for c in coverages for s in strides]
@@ -439,7 +583,7 @@ def main():
         # Each rank processes its subset
         # Use per_class_out as checkpoint path
         df_per_class = per_class_analysis_fast(
-            df=df,
+            df=per_class_subset,
             processor=processor,
             model=model,
             coverages=my_coverages,
@@ -454,12 +598,13 @@ def main():
         
         # Gather results from all ranks
         if ddp:
-            # Gather all dataframes to rank 0
+            # All ranks process all data, so they all have the same complete results
+            # Only rank 0 needs to save
             gathered_dfs = [None] * world_size
             dist.all_gather_object(gathered_dfs, df_per_class)
             if rank == 0:
-                # Combine all results
-                df_per_class = pd.concat(gathered_dfs, ignore_index=True)
+                # Use the results from rank 0 (all ranks have identical results)
+                df_per_class = gathered_dfs[0]
         
         # Save and log only on rank 0
         if not ddp or rank == 0:

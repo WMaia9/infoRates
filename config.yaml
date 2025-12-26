@@ -1,9 +1,13 @@
-# Training Configuration for InfoRates UCF-101
-# Updated: December 20, 2025 - Multi-Model Support
+# Multi-Dataset Configuration for InfoRates
+# Updated: December 24, 2025 - Multi-Dataset Support
+
+# ===== DATASET SELECTION =====
+# Choose dataset: ucf101 | kinetics400 | hmdb51
+dataset: "kinetics400"
 
 # ===== MODEL SELECTION =====
 # Choose model: timesformer | videomae | vivit
-model_name: "timesformer"
+model_name: "videomae"
 
 # ===== TRAINING HYPERPARAMETERS =====
 train_epochs: 5
@@ -11,12 +15,10 @@ train_batch_size: 15                         # Batch size per GPU
 train_learning_rate: 1e-5
 train_gradient_accumulation_steps: 1          # Use >1 for memory efficiency
 train_cleanup_interval: 0                     # Clean memory every N steps (0 = only at epoch boundaries)
-train_video_root: "data/UCF101_data/UCF-101"
-train_save_path: "fine_tuned_models"
 train_num_workers: 4
 train_pin_memory: true
-train_use_ddp: false                          # Set to true for multi-GPU
-train_num_gpus: 1
+train_use_ddp: true                           # Set to true for multi-GPU (requires torchrun)
+train_num_gpus: 2                             # Number of GPUs for DDP training
 train_device: "cuda"
 
 # ===== W&B LOGGING =====
@@ -25,25 +27,31 @@ train_wandb_run_name: "fine-tuning-multimodel"
 train_disable_wandb: false
 
 # ===== EVALUATION SETTINGS =====
-eval_results_dir: "data/UCF101_data/results"
 eval_batch_size: 30
 eval_sample_size: 0                          # 0 = full dataset, N = limit to N samples
-eval_device: "cuda"
-eval_wandb: false                             # Optional W&B logging
+eval_workers: 8                              # Number of parallel workers
+eval_coverages: [10, 25, 50, 75, 100]       # Temporal coverage levels (%)
+eval_strides: [1, 2, 4, 8, 16]              # Temporal stride values
+eval_per_class: false                        # Enable per-class analysis
+eval_per_class_sample_size: -1               # -1 = full dataset for per-class
+eval_jitter_coverage_pct: 0.0                # Random jitter for robustness testing
+eval_wandb: false                            # Enable W&B logging for evaluation
 
-# ===== TEMPORAL SAMPLING =====
-# Configurations to test: coverage (%) × stride
-eval_coverages: [10, 25, 50, 75, 100]
-eval_strides: [1, 2, 4, 8, 16]
+# ===== DATASET-SPECIFIC PATHS =====
+# These will be auto-configured based on dataset selection above
+# UCF-101 settings
+ucf101_video_root: "data/UCF101_data/UCF-101"
+ucf101_results_dir: "data/UCF101_data/results"
+ucf101_wandb_project: "inforates-ucf101"
 
-# ===== MODEL-SPECIFIC DEFAULTS =====
-# Frame counts per model (auto-handled by scripts, but documented here):
-# - TimeSformer:  8 frames (divided space-time attention)
-# - VideoMAE:    16 frames (masked autoencoder pretraining)
-# - ViViT:       32 frames (pure vision transformer)
-#
-# Models are automatically loaded from Hugging Face:
-# - TimeSformer: facebook/timesformer-base-finetuned-k400
-# - VideoMAE:    MCG-NJU/videomae-base-finetuned-kinetics
-# - ViViT:       google/vivit-b-16x2
+# Kinetics400 settings
+kinetics400_video_root: "data/Kinetics400_data/k4testset/videos_val"
+kinetics400_val_list: "data/Kinetics400_data/k4testset/kinetics400_val_list_videos.txt"
+kinetics400_results_dir: "data/Kinetics400_data/results"
+kinetics400_wandb_project: "inforates-kinetics400"
+
+# HMDB51 settings
+hmdb51_video_root: "data/HMDB51_data/videos"
+hmdb51_results_dir: "data/HMDB51_data/results"
+hmdb51_wandb_project: "inforates-hmdb51"
 
