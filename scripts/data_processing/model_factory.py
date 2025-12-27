@@ -45,6 +45,24 @@ class ModelFactory:
             "input_size": 224,
             "default_frames": 32,
         },
+        "slowfast": {
+            "model_id": "facebookresearch/slowfast-r50",
+            "description": "SlowFast (Two-pathway Networks)",
+            "architecture": "3D CNN",
+            "expected_frames": 32,
+            "input_size": 224,
+            "default_frames": 32,
+            "slow_path_frames": 8,
+            "fast_path_frames": 32,
+        },
+        "x3d": {
+            "model_id": "facebookresearch/x3d-xs",
+            "description": "X3D (Expandable 3D Networks)",
+            "architecture": "3D CNN",
+            "expected_frames": 16,
+            "input_size": 224,
+            "default_frames": 16,
+        },
     }
     
     @staticmethod

@@ -63,3 +63,42 @@ To download datasets:
 - HMDB51: `scripts/data_processing/download_hmdb51.sh`
 - Kinetics400 subsets: `scripts/data_processing/download_kinetics_mini.sh` or `download_kinetics50_subset.sh`
 - Something-Something V2: `scripts/data_processing/download_ssv2.sh` (Note: Large dataset ~100GB)
+
+## Advanced Analysis Features
+
+### Critical Frequency Analysis
+Analyze action dynamics and identify optimal sampling rates:
+```bash
+# Analyze critical frequencies for a dataset
+python scripts/analysis/critical_frequency_analysis.py --dataset ucf101 --sample-size 100
+```
+
+### Temporal Mitigation Strategies
+Implement advanced techniques to combat aliasing:
+```bash
+# Temporal augmentation for robust training
+python scripts/analysis/temporal_mitigation.py --mode augment
+
+# Adaptive sampling based on model confidence
+python scripts/analysis/temporal_mitigation.py --mode adaptive --video-path path/to/video.mp4
+
+# Multiresolution analysis
+python scripts/analysis/temporal_mitigation.py --mode multiresolution --video-path path/to/video.mp4
+```
+
+### Comprehensive Hyperparameter Sweep
+Systematic testing across frame rates and clip durations:
+```bash
+# Full hyperparameter sweep (as per research milestones)
+python scripts/analysis/hyperparameter_sweep.py --models timesformer videomae vivit --datasets ucf101 kinetics400 --dry-run
+
+# Execute sweep
+python scripts/analysis/hyperparameter_sweep.py --models timesformer videomae --max-workers 4
+```
+
+### Research Report Generation
+Generate publication-ready reports with graphs and tables:
+```bash
+# Generate complete research report
+python scripts/analysis/generate_research_report.py --results-dir evaluations --output-dir docs/research_report
+```
