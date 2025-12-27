@@ -56,6 +56,10 @@ This design enables independent assessment of coverage (temporal extent) and str
 - Effect size calculations (η², Cohen's d)
 - Variance homogeneity tests (Levene's test)
 
+### 1.5 Computing Infrastructure and Reproducibility
+
+All training and distributed evaluation experiments were executed on the host `metalhogod` using 2× NVIDIA A100 40GB GPUs with PyTorch Distributed Data Parallel (DDP). Reproducibility artifacts (per-class CSVs, pairwise JSONs, and scripts) are available in `evaluations/` and `scripts/`.
+
 ---
 
 ## 2. Results
@@ -64,32 +68,57 @@ This design enables independent assessment of coverage (temporal extent) and str
 
 **Table 1: Complete Performance Results Across Datasets and Architectures**
 
-| Dataset | Architecture | Peak Accuracy | 100% Coverage | 75% Coverage | 50% Coverage | 25% Coverage | 10% Coverage | Aliasing Drop | Latency (s) | Memory (GB) |
-|---------|--------------|----------------|---------------|--------------|--------------|--------------|--------------|---------------|-------------|-------------|
-| UCF-101 | TimeSformer | 85.09% | 84.22% | 83.45% | 82.16% | 77.36% | 72.89% | -6.86% | 0.017 | 2.1 |
-| UCF-101 | VideoMAE | 86.90% | 79.85% | 78.12% | 75.43% | 62.68% | 55.21% | -17.17% | 0.029 | 3.2 |
-| UCF-101 | ViViT | 85.49% | 83.59% | 82.91% | 81.23% | 70.41% | 65.78% | -13.18% | 0.000 | 1.8 |
-| Kinetics-400 | TimeSformer | 74.13% | 73.97% | 72.84% | 71.23% | 63.94% | 58.76% | -10.03% | 0.017 | 2.1 |
-| Kinetics-400 | VideoMAE | 76.45% | 71.89% | 69.34% | 66.78% | 59.12% | 52.34% | -12.31% | 0.029 | 3.2 |
-| Kinetics-400 | ViViT | 75.21% | 73.45% | 71.98% | 69.87% | 62.34% | 57.89% | -11.12% | 0.000 | 1.8 |
+| Dataset | Architecture | Peak Accuracy (best cfg) | Mean @100% (±std) | Best @100% (stride, acc) | Mean @75% (±std) | Mean @50% (±std) | Mean @25% (±std) | Mean @10% (±std) | Aliasing Drop (100→25) | Latency (s) | Memory (GB) |
+|---------|--------------|-------------------------|-------------------:|---------------------------|-------------------:|-------------------:|-------------------:|-------------------:|----------------------:|-------------:|------------:|
+| UCF-101 | TimeSformer | 85.09% (100%, stride-2) | 84.22% ± 1.19% | stride-2 (85.09%) | 84.08% ± 1.07% | 82.16% ± 1.77% | 77.36% ± 4.60% | 73.58% ± 3.92% | -6.86% | 0.017 | 2.1 |
+| UCF-101 | VideoMAE | 86.90% (100%, stride-1) | 79.85% ± 6.74% | stride-1 (86.90%) | 74.92% ± 10.18% | 73.24% ± 9.04% | 62.68% ± 12.61% | 54.33% ± 11.35% | -17.18% | 0.029 | 3.2 |
+| UCF-101 | ViViT | 85.49% (100%, stride-1) | 83.59% ± 2.01% | stride-1 (85.49%) | 81.49% ± 3.81% | 78.74% ± 5.47% | 70.41% ± 8.64% | 64.05% ± 7.17% | -13.18% | 0.41 | 1.8 |
+| Kinetics-400 | TimeSformer | 74.19% (100%, stride-4) | 74.01% ± 0.15% | stride-4 (74.19%) | 73.29% ± 0.07% | 70.59% ± 0.39% | 63.41% ± 1.82% | 56.13% ± 2.67% | -10.60% | 0.017 | 2.1 |
+| Kinetics-400 | VideoMAE | 76.52% (50%, stride-2) | 75.69% ± 0.26% | stride-1 (75.98%) | 74.78% ± 3.56% | 74.59% ± 3.56% | 68.53% ± 5.52% | 60.69% ± 4.42% | -7.16% | 0.029 | 3.2 |
+| Kinetics-400 | ViViT | 76.19% (100%, stride-1) | 76.02% ± 0.27% | stride-1 (76.19%) | 74.86% ± 1.61% | 73.10% ± 1.73% | 67.78% ± 1.53% | 60.81% ± 2.25% | -8.23% | 0.41 | 1.8 |
+
+
+> **Note:** "Peak" is the single best coverage×stride configuration found across all experiments; "Mean @X%" reports the mean ± std across strides at that coverage level.
 
 **Figure 1: Coverage Degradation Patterns Across All Architectures and Datasets**
 
+**UCF-101 — TimeSformer**
+
 ![UCF-101 TimeSformer Coverage](../evaluations/ucf101/timesformer/accuracy_vs_coverage.png)
+
+**Descrição (UCF-101 — TimeSformer):** Mantém acurácias altas em cobertura plena (≈0.85) com queda moderada quando a cobertura é reduzida; as curvas de diferentes strides se sobrepõem, indicando baixa sensibilidade a stride e boa capacidade de agregação temporal por atenção global.
+
+**UCF-101 — VideoMAE**
+
 ![UCF-101 VideoMAE Coverage](../evaluations/ucf101/videomae/accuracy_vs_coverage.png)
+
+**Descrição (UCF-101 — VideoMAE):** Alto pico para stride-1 em cobertura completa, mas forte volatilidade entre strides e queda acentuada em baixa cobertura (perda média elevada); isso reflete dependência do modelo em contextos temporais densos.
+
+**UCF-101 — ViViT**
+
 ![UCF-101 ViViT Coverage](../evaluations/ucf101/vivit/accuracy_vs_coverage.png)
+
+**Descrição (UCF-101 — ViViT):** Comportamento intermediário: bom desempenho em cobertura alta, com maior separação entre curvas de stride do que TimeSformer; indica sensibilidade moderada à densidade temporal, especialmente em classes de alta frequência.
+
+**Kinetics-400 — TimeSformer**
+
 ![Kinetics-400 TimeSformer Coverage](../evaluations/kinetics400/timesformer/accuracy_vs_coverage.png)
+
+**Descrição (Kinetics-400 — TimeSformer):** Observa-se que o melhor stride ocorre mais distante (ex.: stride-4) quando há muita cobertura disponível; ainda assim, a redução de cobertura provoca queda consistente, mostrando que atenção global ajuda mas não elimina a necessidade de informação temporal suficiente.
+
+**Kinetics-400 — VideoMAE**
+
 ![Kinetics-400 VideoMAE Coverage](../evaluations/kinetics400/videomae/accuracy_vs_coverage.png)
+
+**Descrição (Kinetics-400 — VideoMAE):** Apresenta boa estabilidade em coberturas intermediárias, mas mostra sensibilidade a amostragem esparsa em classes de alta frequência; as curvas sugerem que VideoMAE aproveita correlações temporais quando presentes.
+
+**Kinetics-400 — ViViT**
+
 ![Kinetics-400 ViViT Coverage](../evaluations/kinetics400/vivit/accuracy_vs_coverage.png)
 
-**Figure 2: Stride-Accuracy Heatmaps**
+**Descrição (Kinetics-400 — ViViT):** Mostra comportamento consistente e menos variância inter-stride em relação a VideoMAE; quedas moderadas em cobertura reduzida indicam robustez para ações de baixa/média frequência.
 
-![UCF-101 TimeSformer Heatmap](../evaluations/ucf101/timesformer/accuracy_heatmap.png)
-![UCF-101 VideoMAE Heatmap](../evaluations/ucf101/videomae/accuracy_heatmap.png)
-![UCF-101 ViViT Heatmap](../evaluations/ucf101/vivit/accuracy_heatmap.png)
-![Kinetics-400 TimeSformer Heatmap](../evaluations/kinetics400/timesformer/accuracy_heatmap.png)
-![Kinetics-400 VideoMAE Heatmap](../evaluations/kinetics400/videomae/accuracy_heatmap.png)
-![Kinetics-400 ViViT Heatmap](../evaluations/kinetics400/vivit/accuracy_heatmap.png)
+**Figure 2: Stride-Accuracy Heatmaps** — See Supplementary Figures S1–S6 in the Supplementary Material at the end of this document.
 
 ### 2.2 Statistical Analysis of Temporal Effects
 
@@ -274,5 +303,25 @@ These findings enable principled system design decisions, moving beyond empirica
 [7] K. Soomro, A. R. Zamir, and M. Shah, "UCF101: A dataset of 101 human actions classes from videos in the wild," arXiv preprint arXiv:1212.0402, 2012.
 
 [8] W. Kay, J. Carreira, K. Simonyan, B. Zhang, C. Hillier, S. Vijayanarasimhan, F. Viola, T. Green, T. Back, P. Natsev, M. Suleyman, and A. Zisserman, "The kinetics human action video dataset," arXiv preprint arXiv:1705.06950, 2017.
+
+---
+
+## Supplementary Material
+
+### Supplementary Figures: Stride-Accuracy Heatmaps
+
+Below are the stride-accuracy heatmaps referenced in Figure 2 (main text). These visualizations show accuracy (color) across coverage × stride grids for each dataset and architecture.
+
+![UCF-101 TimeSformer Heatmap](../evaluations/ucf101/timesformer/accuracy_heatmap.png)
+
+![UCF-101 VideoMAE Heatmap](../evaluations/ucf101/videomae/accuracy_heatmap.png)
+
+![UCF-101 ViViT Heatmap](../evaluations/ucf101/vivit/accuracy_heatmap.png)
+
+![Kinetics-400 TimeSformer Heatmap](../evaluations/kinetics400/timesformer/accuracy_heatmap.png)
+
+![Kinetics-400 VideoMAE Heatmap](../evaluations/kinetics400/videomae/accuracy_heatmap.png)
+
+![Kinetics-400 ViViT Heatmap](../evaluations/kinetics400/vivit/accuracy_heatmap.png)
 
 ---

@@ -73,6 +73,9 @@ def generate_distribution_plot(per_class_csv, output_dir, model_name, stride=8):
     axes[0].set_title('Boxplot: Per-Class Accuracy by Coverage', fontsize=16)
     axes[0].set_xticklabels([str(int(c)) for c in coverages])
     axes[0].grid(True, linestyle=':', alpha=0.5)
+    # Set y-axis to 3 decimal places
+    import matplotlib.ticker as mtick
+    axes[0].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.3f'))
 
     # Violin plot
     sns.violinplot(data=pd.DataFrame(acc_matrix, columns=coverages), ax=axes[1], inner='quartile')
@@ -80,10 +83,10 @@ def generate_distribution_plot(per_class_csv, output_dir, model_name, stride=8):
     axes[1].set_title('Violin: Per-Class Accuracy by Coverage', fontsize=16)
     axes[1].set_xticklabels([str(int(c)) for c in coverages])
     axes[1].grid(True, linestyle=':', alpha=0.5)
+    axes[1].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.3f'))
 
     plt.suptitle(f'Distribution of Per-Class Accuracies at Stride-{stride} Across Coverage Levels ({model_name.capitalize()})', fontsize=18, fontweight='bold')
     plt.tight_layout(rect=[0, 0, 1, 0.96])
-
     output_path = output_dir / f"per_class_distribution_by_coverage.png"
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
@@ -139,11 +142,22 @@ def generate_representative_plot(per_class_csv, output_dir, model_name):
 
     ax.set_xlabel('Frame Coverage (%)', fontsize=14)
     ax.set_ylabel('Accuracy', fontsize=14)
+    # Format y-axis to 3 decimal places and annotate each plotted line's points
+    import matplotlib.ticker as mtick
+    ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.3f'))
+
     ax.set_title(f'Representative Classes: Sensitivity Analysis ({model_name.capitalize()})', fontsize=16, fontweight='bold')
     ax.set_xticks(coverages)
     ax.set_xticklabels([f"{int(c)}%" for c in coverages])
     ax.grid(True, alpha=0.3)
     ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+
+    # Annotate points for each plotted line
+    for line in ax.get_lines():
+        xdata = line.get_xdata()
+        ydata = line.get_ydata()
+        for x_val, y_val in zip(xdata, ydata):
+            ax.annotate(f"{y_val:.3f}", (x_val, y_val), textcoords="offset points", xytext=(0,6), ha='center', fontsize=8)
 
     plt.tight_layout()
     output_path = output_dir / "per_class_representative.png"
@@ -172,8 +186,8 @@ def generate_heatmap_plot(temporal_csv, output_dir, model_name):
     plt.close()
     print(f"✅ Saved: {output_path}")
 
-def generate_accuracy_curves(temporal_csv, output_dir, model_name):
-    """Generate accuracy vs coverage curves for different strides."""
+def generate_accuracy_curves(temporal_csv, output_dir, model_name, dataset_name=None):
+    """Generate accuracy vs coverage curves for different strides, including dataset in title."""
     print("📈 Generating accuracy curves...")
 
     df = pd.read_csv(temporal_csv)
@@ -187,10 +201,18 @@ def generate_accuracy_curves(temporal_csv, output_dir, model_name):
         stride_data = df[df['stride'] == stride].sort_values('coverage')
         plt.plot(stride_data['coverage'], stride_data['accuracy'],
                 label=f'Stride {stride}', color=colors[i], linewidth=2, marker='o')
+        # Annotate each point with 3 decimal places
+        for x_val, y_val in zip(stride_data['coverage'], stride_data['accuracy']):
+            plt.annotate(f"{y_val:.3f}", (x_val, y_val), textcoords="offset points", xytext=(0,6), ha='center', fontsize=8)
 
     plt.xlabel('Frame Coverage (%)', fontsize=14)
     plt.ylabel('Accuracy', fontsize=14)
-    plt.title(f'Accuracy vs Coverage by Stride ({model_name.capitalize()})', fontsize=16, fontweight='bold')
+    # Force y-axis tick labels to show 3 decimal places for consistency
+    import matplotlib.ticker as mtick
+    plt.gca().yaxis.set_major_formatter(mtick.FormatStrFormatter('%.3f'))
+
+    dataset_label = f" — {dataset_name.upper()}" if dataset_name else ""
+    plt.title(f'Accuracy vs Coverage by Stride ({model_name.capitalize()}{dataset_label})', fontsize=16, fontweight='bold')
     plt.legend()
     plt.grid(True, alpha=0.3)
 
@@ -226,13 +248,22 @@ def main():
             print(f"⚠️  No results found for {model} on {args.dataset}")
             continue
 
-        # Find CSV files
+        # Find CSV files (with fallbacks for different filename patterns)
         if args.dataset == 'kinetics400':
             per_class_csv = model_dir / f"{model}-base-finetuned-kinetics_per_class.csv"
             temporal_csv = model_dir / f"{model}-base-finetuned-kinetics_temporal_sampling.csv"
         else:  # ucf101
             per_class_csv = model_dir / f"fine_tuned_{model}_{args.dataset}_per_class_testset.csv"
             temporal_csv = model_dir / f"fine_tuned_{model}_{args.dataset}_temporal_sampling.csv"
+
+        # Fallback: search for any file containing 'per_class' or 'temporal_sampling'
+        if not per_class_csv.exists():
+            matches = list(model_dir.glob("*per_class*.csv"))
+            per_class_csv = matches[0] if matches else per_class_csv
+
+        if not temporal_csv.exists():
+            matches = list(model_dir.glob("*temporal_sampling*.csv"))
+            temporal_csv = matches[0] if matches else temporal_csv
 
         if not per_class_csv.exists():
             print(f"❌ Per-class CSV not found: {per_class_csv}")
@@ -247,7 +278,7 @@ def main():
             generate_distribution_plot(per_class_csv, model_dir, model, args.stride)
             generate_representative_plot(per_class_csv, model_dir, model)
             generate_heatmap_plot(temporal_csv, model_dir, model)
-            generate_accuracy_curves(temporal_csv, model_dir, model)
+            generate_accuracy_curves(temporal_csv, model_dir, model, args.dataset)
 
             # Run statistical analysis
             run_statistical_analysis(str(temporal_csv), str(per_class_csv), model_dir)
