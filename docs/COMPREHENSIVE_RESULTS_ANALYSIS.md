@@ -86,37 +86,37 @@ All training and distributed evaluation experiments were executed on the host `m
 
 ![UCF-101 TimeSformer Coverage](../evaluations/ucf101/timesformer/accuracy_vs_coverage.png)
 
-**Descrição (UCF-101 — TimeSformer):** Mantém acurácias altas em cobertura plena (≈0.85) com queda moderada quando a cobertura é reduzida; as curvas de diferentes strides se sobrepõem, indicando baixa sensibilidade a stride e boa capacidade de agregação temporal por atenção global.
+**Description (UCF-101 — TimeSformer):** Maintains high accuracy at full coverage (~0.85) with a moderate decline as coverage decreases; curves for different strides largely overlap, indicating low sensitivity to stride and effective global temporal aggregation through attention.
 
 **UCF-101 — VideoMAE**
 
 ![UCF-101 VideoMAE Coverage](../evaluations/ucf101/videomae/accuracy_vs_coverage.png)
 
-**Descrição (UCF-101 — VideoMAE):** Alto pico para stride-1 em cobertura completa, mas forte volatilidade entre strides e queda acentuada em baixa cobertura (perda média elevada); isso reflete dependência do modelo em contextos temporais densos.
+**Description (UCF-101 — VideoMAE):** Shows a strong peak for stride-1 at full coverage but high volatility across strides and steep drops at low coverage (large average loss), reflecting reliance on dense temporal context and reconstruction-based representations.
 
 **UCF-101 — ViViT**
 
 ![UCF-101 ViViT Coverage](../evaluations/ucf101/vivit/accuracy_vs_coverage.png)
 
-**Descrição (UCF-101 — ViViT):** Comportamento intermediário: bom desempenho em cobertura alta, com maior separação entre curvas de stride do que TimeSformer; indica sensibilidade moderada à densidade temporal, especialmente em classes de alta frequência.
+**Description (UCF-101 — ViViT):** Exhibits intermediate behavior: strong performance at high coverage with greater separation between stride curves than TimeSformer; this indicates moderate sensitivity to temporal density, particularly for high-frequency classes.
 
 **Kinetics-400 — TimeSformer**
 
 ![Kinetics-400 TimeSformer Coverage](../evaluations/kinetics400/timesformer/accuracy_vs_coverage.png)
 
-**Descrição (Kinetics-400 — TimeSformer):** Observa-se que o melhor stride ocorre mais distante (ex.: stride-4) quando há muita cobertura disponível; ainda assim, a redução de cobertura provoca queda consistente, mostrando que atenção global ajuda mas não elimina a necessidade de informação temporal suficiente.
+**Description (Kinetics-400 — TimeSformer):** The optimal stride shifts toward larger strides (e.g., stride-4) when ample coverage is available; nonetheless, reducing coverage causes consistent accuracy drops—global attention helps but cannot recover missing temporal information.
 
 **Kinetics-400 — VideoMAE**
 
 ![Kinetics-400 VideoMAE Coverage](../evaluations/kinetics400/videomae/accuracy_vs_coverage.png)
 
-**Descrição (Kinetics-400 — VideoMAE):** Apresenta boa estabilidade em coberturas intermediárias, mas mostra sensibilidade a amostragem esparsa em classes de alta frequência; as curvas sugerem que VideoMAE aproveita correlações temporais quando presentes.
+**Description (Kinetics-400 — VideoMAE):** Stable at intermediate coverages but sensitive to sparse sampling in high-frequency classes; the curves suggest VideoMAE leverages temporal correlations effectively when they are present.
 
 **Kinetics-400 — ViViT**
 
 ![Kinetics-400 ViViT Coverage](../evaluations/kinetics400/vivit/accuracy_vs_coverage.png)
 
-**Descrição (Kinetics-400 — ViViT):** Mostra comportamento consistente e menos variância inter-stride em relação a VideoMAE; quedas moderadas em cobertura reduzida indicam robustez para ações de baixa/média frequência.
+**Description (Kinetics-400 — ViViT):** Shows consistent behavior with less inter-stride variance than VideoMAE; moderate declines at reduced coverage indicate robustness for low-to-mid frequency actions.
 
 **Figure 2: Stride-Accuracy Heatmaps** — See Supplementary Figures S1–S6 in the Supplementary Material at the end of this document.
 
