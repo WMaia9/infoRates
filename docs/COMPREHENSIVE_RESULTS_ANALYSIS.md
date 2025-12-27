@@ -261,23 +261,3 @@ These findings enable principled system design decisions, moving beyond empirica
 [8] W. Kay, J. Carreira, K. Simonyan, B. Zhang, C. Hillier, S. Vijayanarasimhan, F. Viola, T. Green, T. Back, P. Natsev, M. Suleyman, and A. Zisserman, "The kinetics human action video dataset," arXiv preprint arXiv:1705.06950, 2017.
 
 ---
-
-## Supplementary Material
-
-### Supplementary Figures: Stride-Accuracy Heatmaps
-
-Below are the stride-accuracy heatmaps referenced in Figure 2 (main text). These visualizations show accuracy (color) across coverage × stride grids for each dataset and architecture.
-
-![UCF-101 TimeSformer Heatmap](../evaluations/ucf101/timesformer/accuracy_heatmap.png)
-
-![UCF-101 VideoMAE Heatmap](../evaluations/ucf101/videomae/accuracy_heatmap.png)
-
-![UCF-101 ViViT Heatmap](../evaluations/ucf101/vivit/accuracy_heatmap.png)
-
-![Kinetics-400 TimeSformer Heatmap](../evaluations/kinetics400/timesformer/accuracy_heatmap.png)
-
-![Kinetics-400 VideoMAE Heatmap](../evaluations/kinetics400/videomae/accuracy_heatmap.png)
-
-![Kinetics-400 ViViT Heatmap](../evaluations/kinetics400/vivit/accuracy_heatmap.png)
-
----
