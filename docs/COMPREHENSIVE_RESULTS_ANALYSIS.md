@@ -95,7 +95,7 @@ This section summarizes the inferential statistics for coverage and stride acros
 
 ### 2.3 Per-Class Heterogeneity Analysis
 
-**Table 3: Action Categories by Aliasing Sensitivity**
+**Table 2: Action Categories by Aliasing Sensitivity**
 
 | Sensitivity Tier | Δ Range | UCF-101 Classes | Kinetics-400 Classes | Representative Actions | Motion Characteristics |
 |------------------|---------|-----------------|---------------------|----------------------|----------------------|
@@ -130,12 +130,12 @@ This section summarizes the inferential statistics for coverage and stride acros
 All reported inferential statistics below are computed from per-class accuracy vectors stored in the evaluation outputs (see `evaluations/*/*_per_class.csv`) and the precomputed summary statistics in `evaluations/*/*/statistical_results.json`. Pairwise coverage comparisons were computed using Welch's t-tests on per-class accuracies (stride = 1) with Bonferroni correction for 10 comparisons.
 
 ### 2.4.2 Comprehensive ANOVA and Variance Results
-**Table 2: Comprehensive Statistical Results (coverage and stride ANOVAs, mean drop, Levene, effect sizes)**
+**Table 3: Comprehensive Statistical Results (coverage and stride ANOVAs, mean drop, Levene, effect sizes)**
 
 | Dataset | Arch | Coverage F (df) | p-value | η² | Stride F (df) | p-value | η² | Mean Δ (100→25) ± σ | Levene p | Cohen's d (aliasing) | Cohen's d (stride) |
 |---------|------|-----------------|---------:|----:|---------------|--------:|----:|---------------------:|---------:|---------------------:|--------------------:|
 | UCF-101 | TimeSformer | F(4,500)=8.138 | <0.001 | 0.061 | F(4,500)=0.477 | 0.7530 | 0.0038 | 0.0699 ± 0.1112 | 0.0020 | 0.630 | 0.134 |
-| UCF-101 | VideoMAE | F(4,500)=32.455 | <0.001 | 0.206 | F(4,500)=13.005 | 0.001 | 0.0942 | 0.1822 ± 0.1861 | <0.001 | 1.380 | 0.763 |
+| UCF-101 | VideoMAE | F(4,500)=32.455 | <0.001 | 0.206 | F(4,500)=13.005 | <0.001 | 0.0942 | 0.1822 ± 0.1861 | <0.001 | 1.380 | 0.763 |
 | UCF-101 | ViViT | F(4,500)=20.941 | <0.001 | 0.1435 | F(4,500)=0.792 | 0.5310 | 0.0063 | 0.1302 ± 0.1521 | <0.001 | 1.050 | 0.224 |
 | Kinetics-400 | TimeSformer | F(4,1995)=78.770 | <0.001 | 0.1364 | F(4,1995)=0.028 | 0.9985 | 0.0001 | 0.1059 ± 0.0741 | 0.0109 | 1.043 | 0.006 |
 | Kinetics-400 | VideoMAE | F(4,1995)=65.984 | <0.001 | 0.1168 | F(4,1995)=0.085 | 0.9871 | 0.0002 | 0.0715 ± 0.0701 | 0.0010 | 0.827 | 0.037 |
