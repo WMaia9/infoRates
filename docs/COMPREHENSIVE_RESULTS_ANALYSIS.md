@@ -80,43 +80,11 @@ All training and distributed evaluation experiments were executed on the host `m
 
 > **Note:** "Peak" is the single best coverage×stride configuration found across all experiments; "Mean @X%" reports the mean ± std across strides at that coverage level.
 
-**Figure 1: Coverage Degradation Patterns Across All Architectures and Datasets**
+**Figure 1: Coverage–Stride Interactions (Composite 2×3)**
 
-**UCF-101 — TimeSformer**
+![Coverage × Stride Composite](../evaluations/comparative/coverage_stride_interactions.png)
 
-![UCF-101 TimeSformer Coverage](../evaluations/ucf101/timesformer/accuracy_vs_coverage.png)
-
-**Description (UCF-101 — TimeSformer):** Maintains high accuracy at full coverage (~0.85) with a moderate decline as coverage decreases; curves for different strides largely overlap, indicating low sensitivity to stride and effective global temporal aggregation through attention.
-
-**UCF-101 — VideoMAE**
-
-![UCF-101 VideoMAE Coverage](../evaluations/ucf101/videomae/accuracy_vs_coverage.png)
-
-**Description (UCF-101 — VideoMAE):** Shows a strong peak for stride-1 at full coverage but high volatility across strides and steep drops at low coverage (large average loss), reflecting reliance on dense temporal context and reconstruction-based representations.
-
-**UCF-101 — ViViT**
-
-![UCF-101 ViViT Coverage](../evaluations/ucf101/vivit/accuracy_vs_coverage.png)
-
-**Description (UCF-101 — ViViT):** Exhibits intermediate behavior: strong performance at high coverage with greater separation between stride curves than TimeSformer; this indicates moderate sensitivity to temporal density, particularly for high-frequency classes.
-
-**Kinetics-400 — TimeSformer**
-
-![Kinetics-400 TimeSformer Coverage](../evaluations/kinetics400/timesformer/accuracy_vs_coverage.png)
-
-**Description (Kinetics-400 — TimeSformer):** The optimal stride shifts toward larger strides (e.g., stride-4) when ample coverage is available; nonetheless, reducing coverage causes consistent accuracy drops—global attention helps but cannot recover missing temporal information.
-
-**Kinetics-400 — VideoMAE**
-
-![Kinetics-400 VideoMAE Coverage](../evaluations/kinetics400/videomae/accuracy_vs_coverage.png)
-
-**Description (Kinetics-400 — VideoMAE):** Stable at intermediate coverages but sensitive to sparse sampling in high-frequency classes; the curves suggest VideoMAE leverages temporal correlations effectively when they are present.
-
-**Kinetics-400 — ViViT**
-
-![Kinetics-400 ViViT Coverage](../evaluations/kinetics400/vivit/accuracy_vs_coverage.png)
-
-**Description (Kinetics-400 — ViViT):** Shows consistent behavior with less inter-stride variance than VideoMAE; moderate declines at reduced coverage indicate robustness for low-to-mid frequency actions.
+**Caption:** Mean accuracy (%) across coverage (rows) and stride (columns) for each dataset × model (rows: UCF-101, Kinetics-400; columns: TimeSformer, VideoMAE, ViViT). This consolidated 2×3 panel collates the per-model coverage×stride heatmaps into a single figure for immediate visual comparison. Individual per-model coverage curves and per-class distribution panels are available in the Supplementary Figures (S1–S6) and the `evaluations/` folders for reproducibility.
 
 **Figure 2: Stride-Accuracy Heatmaps** — See Supplementary Figures S1–S6 in the Supplementary Material at the end of this document.
 
@@ -150,9 +118,7 @@ This section summarizes the inferential statistics for coverage and stride acros
 
 **Figure X (Composite):** Per-class accuracy distributions at stride=8 across coverage levels, arranged as a 2×3 panel (rows: UCF-101, Kinetics-400; columns: TimeSformer, VideoMAE, ViViT). Medians are annotated above each box for clarity; individual point labels have been removed for readability. If you prefer separate per-model panels, high-resolution per-model images are available in each model directory (e.g., `evaluations/ucf101/timesformer/per_class_distribution_by_coverage.png`).
 
-![Coverage-Stride Interactions](../evaluations/comparative/coverage_stride_interactions.png)
-
-**Figure X: Coverage–Stride Interactions.** Mean accuracy (color) across coverage (rows) and stride (columns) for each dataset × model (UCF-101, Kinetics-400 × TimeSformer, VideoMAE, ViViT). Each cell displays mean accuracy for that configuration; white text indicates poorer performance while darker colors indicate higher accuracy.
+See **Figure 1 (Coverage–Stride Interactions composite)** above for the consolidated coverage×stride heatmaps across datasets and models (UCF-101, Kinetics-400 × TimeSformer, VideoMAE, ViViT).
 
 **Key Patterns**:
 - At full coverage: Architecture-specific optimal strides (TimeSformer: stride-8, VideoMAE/ViViT: stride-1)
