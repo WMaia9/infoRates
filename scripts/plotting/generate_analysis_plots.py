@@ -153,44 +153,36 @@ def generate_representative_plot(per_class_csv, output_dir, model_name):
     # Create plot
     fig, ax = plt.subplots(figsize=(12, 8))
 
-    colors = plt.cm.Set1(np.linspace(0, 1, 10))
-    line_styles = ['-', '--', '-.', ':', (0, (3, 1, 1, 1))]
+    # Distinct palette and styles for clarity
+    pal = sns.color_palette("tab10", n_colors=10)
 
-    for i, cls in enumerate(sensitive_classes + robust_classes):
-        if cls in sensitive_classes:
-            label = f"{cls} (sensitive)"
-            color = colors[0]
-            style = '--'
-        else:
-            label = f"{cls} (robust)"
-            color = colors[1]
-            style = '-'
+    classes = sensitive_classes + robust_classes
+    for i, cls in enumerate(classes):
+        label = f"{cls} (sensitive)" if cls in sensitive_classes else f"{cls} (robust)"
+        color = pal[i % len(pal)]
+        style = '--' if cls in sensitive_classes else '-'
 
-        accuracies = [pivot.loc[cls, cov] for cov in coverages]
-        ax.plot(coverages, accuracies, label=label, color=color, linestyle=style, linewidth=2, marker='o')
+        # Convert to percentage for plotting
+        accuracies = [pivot.loc[cls, cov] * 100.0 for cov in coverages]
+        ax.plot(coverages, accuracies, label=label, color=color, linestyle=style, linewidth=2.2, marker='o', markersize=6)
 
     ax.set_xlabel('Frame Coverage (%)', fontsize=14)
-    ax.set_ylabel('Accuracy', fontsize=14)
-    # Format y-axis to 3 decimal places and annotate each plotted line's points
+    ax.set_ylabel('Accuracy (%)', fontsize=14)
+    # Format y-axis as percentage with one decimal
     import matplotlib.ticker as mtick
-    ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.3f'))
+    ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f%%'))
 
     ax.set_title(f'Representative Classes: Sensitivity Analysis ({model_name.capitalize()})', fontsize=16, fontweight='bold')
     ax.set_xticks(coverages)
     ax.set_xticklabels([f"{int(c)}%" for c in coverages])
-    ax.grid(True, alpha=0.3)
-    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    ax.grid(True, alpha=0.25)
 
-    # Annotate only the 100% and 25% endpoints to reduce clutter
-    endpoints = [100, 25]
-    for line in ax.get_lines():
-        xdata = line.get_xdata()
-        ydata = line.get_ydata()
-        for x_val, y_val in zip(xdata, ydata):
-            if x_val in endpoints:
-                ax.annotate(f"{y_val*100:.1f}%", (x_val, y_val), textcoords="offset points", xytext=(0,6), ha='center', fontsize=9, fontweight='semibold')
+    # Place legend below as a compact multi-column legend to avoid overlapping the plot
+    ax.legend(ncol=5, bbox_to_anchor=(0.5, -0.18), loc='upper center', fontsize=9)
 
-    plt.tight_layout()
+    # No per-point annotations (clean lines as requested)
+
+    plt.tight_layout(rect=[0, 0, 1, 0.94])
     output_path = output_dir / "per_class_representative.png"
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
