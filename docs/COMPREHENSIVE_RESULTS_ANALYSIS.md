@@ -142,9 +142,9 @@ All reported inferential statistics below are computed from per-class accuracy v
 
 | Dataset | Arch | Coverage F (df) | Coverage p-value | Coverage η² | Stride F (df) | Stride p-value | Stride η² | Mean Δ (100→25) ± σ | Levene p | Cohen's d (aliasing) | Cohen's d (stride) |
 |---------|------|-----------------|------------------:|------------:|---------------|---------------:|----------:|---------------------:|---------:|---------------------:|--------------------:|
-| UCF-101 | TimeSformer | F(4,500)=8.138 | 2.31e-06 | 0.0611 | F(4,500)=0.477 | 7.53e-01 | 0.0038 | 0.0699 ± 0.1112 | 1.99e-03 | 0.628 | 0.134 |
+| UCF-101 | TimeSformer | F(4,500)=8.138 | 2.31e-06 | 0.0611 | F(4,2520)=6.307 | 4.77e-05 | 0.0099 | 0.0699 ± 0.1112 | 1.99e-03 | 0.628 | 0.134 |
 | UCF-101 | VideoMAE | F(4,500)=32.455 | 4.56e-24 | 0.2061 | F(4,2520)=60.213 | 1.25e-48 | 0.0872 | 0.1822 ± 0.1861 | 3.61e-10 | 1.377 | 0.761 |
-| UCF-101 | ViViT | F(4,500)=20.940 | 5.63e-16 | 0.1435 | F(4,500)=0.792 | 5.31e-01 | 0.0063 | 0.1302 ± 0.1521 | 3.64e-07 | 1.048 | 0.223 |
+| UCF-101 | ViViT | F(4,500)=20.940 | 5.63e-16 | 0.1435 | F(4,2520)=19.681 | 5.75e-16 | 0.0303 | 0.1302 ± 0.1521 | 3.64e-07 | 1.048 | 0.223 |
 | Kinetics-400 | TimeSformer | F(4,1995)=78.770 | 4.10e-62 | 0.1364 | F(4,1995)=0.028 | 9.98e-01 | 0.0001 | 0.1059 ± 0.0741 | 1.09e-02 | 1.043 | 0.006 |
 | Kinetics-400 | VideoMAE | F(4,1995)=65.984 | 1.75e-52 | 0.1168 | F(4,1995)=0.085 | 9.87e-01 | 0.0002 | 0.0715 ± 0.0701 | 1.04e-03 | 0.827 | 0.037 |
 | Kinetics-400 | ViViT | F(4,1995)=38.816 | 2.49e-31 | 0.0722 | F(4,1995)=0.089 | 9.86e-01 | 0.0002 | 0.0824 ± 0.0637 | 2.94e-02 | 0.782 | 0.036 |
@@ -154,7 +154,7 @@ All reported inferential statistics below are computed from per-class accuracy v
 
 > Note: Mean Δ is the average drop in accuracy from 100% to 25% coverage across classes; Levene p reports the test for variance homogeneity across coverage levels.
 
-**Interpretation**: Coverage has a highly significant main effect on accuracy across all architectures and datasets (all p < 0.001). Effect sizes (η²) vary across dataset–architecture pairs: the largest coverage effects occur for UCF-101 VideoMAE (η² = 0.206) and UCF-101 ViViT (η² = 0.143), while UCF-101 TimeSformer shows a modest coverage effect (η² = 0.061). Stride effects are generally small (small η² and non-significant p-values) except for **UCF-101 VideoMAE** (F = 60.213, p < 0.001), which shows a meaningful stride dependence.
+**Interpretation**: Coverage has a highly significant main effect on accuracy across all architectures and datasets (all p < 0.001). Effect sizes (η²) vary across dataset–architecture pairs: the largest coverage effects occur for UCF-101 VideoMAE (η² = 0.206) and UCF-101 ViViT (η² = 0.143), while UCF-101 TimeSformer shows a modest coverage effect (η² = 0.061). Stride effects show varying significance across models: UCF-101 TimeSformer (F = 6.307, p < 0.001), UCF-101 VideoMAE (F = 60.213, p < 0.001), and UCF-101 ViViT (F = 19.681, p < 0.001) all exhibit significant stride dependence, while Kinetics-400 models show negligible effects.
 
 ### 2.4.3 Pairwise Coverage Comparisons (Welch's t-tests)
 We computed pairwise Welch's t-tests for all coverage transitions using per-class accuracies (stride = 1). Representative results for **UCF-101 TimeSformer** (n = 101 classes) are:
