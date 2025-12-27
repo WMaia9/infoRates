@@ -143,7 +143,7 @@ All reported inferential statistics below are computed from per-class accuracy v
 | Dataset | Arch | Coverage F (df) | Coverage p-value | Coverage η² | Stride F (df) | Stride p-value | Stride η² | Mean Δ (100→25) ± σ | Levene p | Cohen's d (aliasing) | Cohen's d (stride) |
 |---------|------|-----------------|------------------:|------------:|---------------|---------------:|----------:|---------------------:|---------:|---------------------:|--------------------:|
 | UCF-101 | TimeSformer | F(4,500)=8.138 | 2.31e-06 | 0.0611 | F(4,500)=0.477 | 7.53e-01 | 0.0038 | 0.0699 ± 0.1112 | 1.99e-03 | 0.628 | 0.134 |
-| UCF-101 | VideoMAE | F(4,500)=32.455 | 4.56e-24 | 0.2061 | F(4,500)=13.005 | 4.41e-10 | 0.0942 | 0.1822 ± 0.1861 | 3.61e-10 | 1.377 | 0.761 |
+| UCF-101 | VideoMAE | F(4,500)=32.455 | 4.56e-24 | 0.2061 | F(4,2520)=60.213 | 1.25e-48 | 0.0872 | 0.1822 ± 0.1861 | 3.61e-10 | 1.377 | 0.761 |
 | UCF-101 | ViViT | F(4,500)=20.940 | 5.63e-16 | 0.1435 | F(4,500)=0.792 | 5.31e-01 | 0.0063 | 0.1302 ± 0.1521 | 3.64e-07 | 1.048 | 0.223 |
 | Kinetics-400 | TimeSformer | F(4,1995)=78.770 | 4.10e-62 | 0.1364 | F(4,1995)=0.028 | 9.98e-01 | 0.0001 | 0.1059 ± 0.0741 | 1.09e-02 | 1.043 | 0.006 |
 | Kinetics-400 | VideoMAE | F(4,1995)=65.984 | 1.75e-52 | 0.1168 | F(4,1995)=0.085 | 9.87e-01 | 0.0002 | 0.0715 ± 0.0701 | 1.04e-03 | 0.827 | 0.037 |
@@ -154,7 +154,7 @@ All reported inferential statistics below are computed from per-class accuracy v
 
 > Note: Mean Δ is the average drop in accuracy from 100% to 25% coverage across classes; Levene p reports the test for variance homogeneity across coverage levels.
 
-**Interpretation**: Coverage has a highly significant main effect on accuracy across all architectures and datasets (all p < 0.001). Effect sizes (η²) vary across dataset–architecture pairs: the largest coverage effects occur for UCF-101 VideoMAE (η² = 0.206) and UCF-101 ViViT (η² = 0.143), while UCF-101 TimeSformer shows a modest coverage effect (η² = 0.061). Stride effects are generally negligible at full coverage (small η² and non-significant p-values) except for **UCF-101 VideoMAE** (F = 13.005, p < 0.001), which shows a meaningful stride dependence.
+**Interpretation**: Coverage has a highly significant main effect on accuracy across all architectures and datasets (all p < 0.001). Effect sizes (η²) vary across dataset–architecture pairs: the largest coverage effects occur for UCF-101 VideoMAE (η² = 0.206) and UCF-101 ViViT (η² = 0.143), while UCF-101 TimeSformer shows a modest coverage effect (η² = 0.061). Stride effects are generally small (small η² and non-significant p-values) except for **UCF-101 VideoMAE** (F = 60.213, p < 0.001), which shows a meaningful stride dependence.
 
 ### 2.4.3 Pairwise Coverage Comparisons (Welch's t-tests)
 We computed pairwise Welch's t-tests for all coverage transitions using per-class accuracies (stride = 1). Representative results for **UCF-101 TimeSformer** (n = 101 classes) are:
@@ -212,7 +212,7 @@ The empirical results show clear, reproducible patterns: temporal coverage is a 
 #### VideoMAE — Masked autoencoding and temporal reconstruction
 - **Strengths**: Masked autoencoder pretraining yields powerful representations that boost peak accuracy when sufficient temporal information is present.
 - **Weaknesses**: Strong dependence on dense temporal context makes VideoMAE vulnerable to undersampling and stride changes — the model was trained to reconstruct and predict missing patches in time, so aggressive temporal thinning removes the prediction context and causes large drops in accuracy (observed large η² and Cohen's d for aliasing).
-- **Why results look like this**: VideoMAE learns fine-grained temporal correlations; when coverage is low these learned correlations break down leading to larger aliasing sensitivity and stride dependence. Notably, for UCF-101 we observe a **significant stride effect** at full coverage for VideoMAE (one-way ANOVA at 100% coverage: F(4,500)=13.005, p=4.41e-10, η²≈0.094), indicating that stride choice itself materially impacts accuracy even when coverage is high. This behavior is consistent with VideoMAE's masked-reconstruction training objective, which benefits from dense temporal context and therefore becomes sensitive to temporal thinning and stride choices (see Table 3 / `docs/tables/table3_statistics.csv`).
+- **Why results look like this**: VideoMAE learns fine-grained temporal correlations; when coverage is low these learned correlations break down leading to larger aliasing sensitivity and stride dependence. Notably, for UCF-101 we observe a **significant stride effect** for VideoMAE (one-way ANOVA: F(4,2520)=60.213, p=1.25e-48, η²≈0.087), indicating that stride choice itself materially impacts accuracy. This behavior is consistent with VideoMAE's masked-reconstruction training objective, which benefits from dense temporal context and therefore becomes sensitive to temporal thinning and stride choices (see Table 3 / `docs/tables/table3_statistics.csv`).
 
 #### ViViT — Local spatiotemporal structure with convolutional inductive bias
 - **Strengths**: ViViT's convolutional front-end and factorized attention capture local motion patterns effectively, which helps for structured, rhythmic, or phase-based actions where coarse sampling can still preserve distinguishing patterns.
