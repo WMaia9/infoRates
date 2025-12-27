@@ -69,14 +69,18 @@ All training and distributed evaluation experiments were executed on the host `m
 
 **Table 1: Complete Performance Results Across Datasets and Architectures**
 
-| Dataset | Architecture | Peak Accuracy (best cfg) | Mean @100% (±std) | Best @100% (stride, acc) | Mean @75% (±std) | Mean @50% (±std) | Mean @25% (±std) | Mean @10% (±std) | Aliasing Drop (100→25) | Latency (s) | Memory (GB) |
-|---------|--------------|-------------------------|-------------------:|---------------------------|-------------------:|-------------------:|-------------------:|-------------------:|----------------------:|-------------:|------------:|
-| UCF-101 | TimeSformer | 85.09% (100%, stride-2) | 84.22% ± 1.19% | stride-2 (85.09%) | 84.08% ± 1.07% | 82.16% ± 1.77% | 77.36% ± 4.60% | 73.58% ± 3.92% | -6.86% | 0.017 | 2.1 |
-| UCF-101 | VideoMAE | 86.90% (100%, stride-1) | 79.85% ± 6.74% | stride-1 (86.90%) | 74.92% ± 10.18% | 73.24% ± 9.04% | 62.68% ± 12.61% | 54.33% ± 11.35% | -17.18% | 0.029 | 3.2 |
-| UCF-101 | ViViT | 85.49% (100%, stride-1) | 83.59% ± 2.01% | stride-1 (85.49%) | 81.49% ± 3.81% | 78.74% ± 5.47% | 70.41% ± 8.64% | 64.05% ± 7.17% | -13.18% | 0.041 | 1.8 |
-| Kinetics-400 | TimeSformer | 74.19% (100%, stride-4) | 74.01% ± 0.15% | stride-4 (74.19%) | 73.29% ± 0.07% | 70.59% ± 0.39% | 63.41% ± 1.82% | 56.13% ± 2.67% | -10.60% | 0.017 | 2.1 |
-| Kinetics-400 | VideoMAE | 76.52% (50%, stride-2) | 75.69% ± 0.26% | stride-1 (75.98%) | 74.78% ± 3.56% | 74.59% ± 3.56% | 68.53% ± 5.52% | 60.69% ± 4.42% | -7.16% | 0.029 | 3.2 |
-| Kinetics-400 | ViViT | 76.19% (100%, stride-1) | 76.02% ± 0.27% | stride-1 (76.19%) | 74.86% ± 1.61% | 73.10% ± 1.73% | 67.78% ± 1.53% | 60.81% ± 2.25% | -8.23% | 0.41 | 1.8 |
+> CSV available: `docs/tables/table1_performance.csv` (generated from `evaluations/*/*_temporal_sampling.csv`)
+
+| Dataset | Architecture | Peak Accuracy (best cfg) | Mean @100% (±std) | Best @100% (stride, acc) | Mean @75% | Mean @50% | Mean @25% | Mean @10% | Aliasing Drop (100→25) | Latency (s) |
+|---------|--------------|-------------------------|-------------------:|---------------------------|-----------:|----------:|----------:|----------:|----------------------:|-----------:|
+| UCF-101 | TimeSformer | 85.09% (100% (stride-2)) | 84.22% ± 1.19% | stride-2 (85.09%) | 84.08% | 82.16% | 77.36% | 73.58% | 6.86% | 0.000 |
+| UCF-101 | VideoMAE | 86.90% (100% (stride-1)) | 79.85% ± 6.74% | stride-1 (86.90%) | 74.92% | 73.24% | 62.68% | 54.33% | 17.18% | 0.000 |
+| UCF-101 | ViViT | 85.49% (100% (stride-1)) | 83.59% ± 2.01% | stride-1 (85.49%) | 81.49% | 78.74% | 70.41% | 64.05% | 13.18% | 0.000 |
+| Kinetics-400 | TimeSformer | 74.19% (100% (stride-4)) | 74.01% ± 0.15% | stride-4 (74.19%) | 73.29% | 70.59% | 63.41% | 56.13% | 10.60% | 0.000 |
+| Kinetics-400 | VideoMAE | 76.52% (50% (stride-2)) | 75.69% ± 0.26% | stride-1 (75.98%) | 74.78% | 74.59% | 68.53% | 60.69% | 7.16% | 0.000 |
+| Kinetics-400 | ViViT | 76.19% (100% (stride-1)) | 76.02% ± 0.27% | stride-1 (76.19%) | 74.86% | 73.10% | 67.78% | 60.81% | 8.23% | 0.000 |
+
+> **Note:** Table 1 values are computed programmatically from the per-model `*_temporal_sampling.csv` outputs (see the linked CSV for machine-readable values). `Latency` values are taken from per-configuration `avg_time` (currently 0.000 for these runs).
 
 
 > **Note:** "Peak" is the single best coverage×stride configuration found across all experiments; **"Mean @X%" reports the mean ± std across strides at that coverage level (i.e., mean of per-configuration accuracies for that coverage, averaged over strides).** For per-class summaries (mean and std across classes at each coverage) see the per-model files `evaluations/*/summary_statistics_by_coverage.csv` and Supplementary Table S1.
@@ -134,14 +138,16 @@ All reported inferential statistics below are computed from per-class accuracy v
 ### 2.4.2 Comprehensive ANOVA and Variance Results
 **Table 3: Comprehensive Statistical Results (coverage and stride ANOVAs, mean drop, Levene, effect sizes)**
 
+> CSV available: `docs/tables/table3_statistics.csv` (generated from `evaluations/*/*/statistical_results.json`)
+
 | Dataset | Arch | Coverage F (df) | Coverage p-value | Coverage η² | Stride F (df) | Stride p-value | Stride η² | Mean Δ (100→25) ± σ | Levene p | Cohen's d (aliasing) | Cohen's d (stride) |
 |---------|------|-----------------|------------------:|------------:|---------------|---------------:|----------:|---------------------:|---------:|---------------------:|--------------------:|
-| UCF-101 | TimeSformer | F(4,500)=8.138 | 2.31e-06 (<0.001) | 0.06112 | F(4,500)=0.477 | 0.75301 | 0.003798 | 0.06994 ± 0.11118 | 0.001985 | 0.62805 | 0.13364 |
-| UCF-101 | VideoMAE | F(4,500)=32.455 | 4.56e-24 (<0.001) | 0.20612 | F(4,500)=13.005 | 4.41e-10 (<0.001) | 0.09423 | 0.18223 ± 0.18614 | 3.61e-10 (<0.001) | 1.37651 | 0.76091 |
-| UCF-101 | ViViT | F(4,500)=20.941 | 5.63e-16 (<0.001) | 0.14349 | F(4,500)=0.792 | 0.53102 | 0.006292 | 0.13020 ± 0.15206 | 3.64e-07 (<0.001) | 1.04772 | 0.22316 |
-| Kinetics-400 | TimeSformer | F(4,1995)=78.770 | 4.10e-62 (<0.001) | 0.13639 | F(4,1995)=0.028 | 0.99848 | 0.000056 | 0.10589 ± 0.07412 | 0.010867 | 1.04316 | 0.00585 |
-| Kinetics-400 | VideoMAE | F(4,1995)=65.984 | 1.75e-52 (<0.001) | 0.11684 | F(4,1995)=0.085 | 0.98711 | 0.000170 | 0.07150 ± 0.07010 | 0.001036 | 0.82670 | 0.03698 |
-| Kinetics-400 | ViViT | F(4,1995)=38.816 | 2.49e-31 (<0.001) | 0.07221 | F(4,1995)=0.089 | 0.98591 | 0.000178 | 0.08245 ± 0.06370 | 0.029409 | 0.78247 | 0.03556 |
+| UCF-101 | TimeSformer | F(4,500)=8.138 | 2.31e-06 | 0.0611 | F(4,500)=0.477 | 7.53e-01 | 0.0038 | 0.0699 ± 0.1112 | 1.99e-03 | 0.628 | 0.134 |
+| UCF-101 | VideoMAE | F(4,500)=32.455 | 4.56e-24 | 0.2061 | F(4,500)=13.005 | 4.41e-10 | 0.0942 | 0.1822 ± 0.1861 | 3.61e-10 | 1.377 | 0.761 |
+| UCF-101 | ViViT | F(4,500)=20.940 | 5.63e-16 | 0.1435 | F(4,500)=0.792 | 5.31e-01 | 0.0063 | 0.1302 ± 0.1521 | 3.64e-07 | 1.048 | 0.223 |
+| Kinetics-400 | TimeSformer | F(4,1995)=78.770 | 4.10e-62 | 0.1364 | F(4,1995)=0.028 | 9.98e-01 | 0.0001 | 0.1059 ± 0.0741 | 1.09e-02 | 1.043 | 0.006 |
+| Kinetics-400 | VideoMAE | F(4,1995)=65.984 | 1.75e-52 | 0.1168 | F(4,1995)=0.085 | 9.87e-01 | 0.0002 | 0.0715 ± 0.0701 | 1.04e-03 | 0.827 | 0.037 |
+| Kinetics-400 | ViViT | F(4,1995)=38.816 | 2.49e-31 | 0.0722 | F(4,1995)=0.089 | 9.86e-01 | 0.0002 | 0.0824 ± 0.0637 | 2.94e-02 | 0.782 | 0.036 |
 
 > Note: "Coverage p-value" and "Coverage η²" report the ANOVA p-value and partial eta-squared for the effect of **coverage** (across 10, 25, 50, 75, 100%), while "Stride p-value" and "Stride η²" report the analogous statistics for the effect of **stride**. Exact p-values are shown (scientific notation for very small values) with a parenthetical significance threshold marker where appropriate (e.g., <0.001). Levene p is from Levene's test for homogeneity of variances across coverage levels.
 
@@ -206,7 +212,7 @@ The empirical results show clear, reproducible patterns: temporal coverage is a 
 #### VideoMAE — Masked autoencoding and temporal reconstruction
 - **Strengths**: Masked autoencoder pretraining yields powerful representations that boost peak accuracy when sufficient temporal information is present.
 - **Weaknesses**: Strong dependence on dense temporal context makes VideoMAE vulnerable to undersampling and stride changes — the model was trained to reconstruct and predict missing patches in time, so aggressive temporal thinning removes the prediction context and causes large drops in accuracy (observed large η² and Cohen's d for aliasing).
-- **Why results look like this**: VideoMAE learns fine-grained temporal correlations; when coverage is low these learned correlations break down leading to larger aliasing sensitivity and stride dependence.
+- **Why results look like this**: VideoMAE learns fine-grained temporal correlations; when coverage is low these learned correlations break down leading to larger aliasing sensitivity and stride dependence. Notably, for UCF-101 we observe a **significant stride effect** at full coverage for VideoMAE (one-way ANOVA at 100% coverage: F(4,500)=13.005, p=4.41e-10, η²≈0.094), indicating that stride choice itself materially impacts accuracy even when coverage is high. This behavior is consistent with VideoMAE's masked-reconstruction training objective, which benefits from dense temporal context and therefore becomes sensitive to temporal thinning and stride choices (see Table 3 / `docs/tables/table3_statistics.csv`).
 
 #### ViViT — Local spatiotemporal structure with convolutional inductive bias
 - **Strengths**: ViViT's convolutional front-end and factorized attention capture local motion patterns effectively, which helps for structured, rhythmic, or phase-based actions where coarse sampling can still preserve distinguishing patterns.
