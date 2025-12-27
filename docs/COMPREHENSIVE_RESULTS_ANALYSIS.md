@@ -86,30 +86,6 @@ All training and distributed evaluation experiments were executed on the host `m
 
 **Caption:** Coverage vs accuracy curves for each dataset × model arranged as a 2×3 panel (rows: UCF-101, Kinetics-400; columns: TimeSformer, VideoMAE, ViViT). Each subplot shows coverage (x-axis) vs mean accuracy across classes (y-axis) for all strides; legends indicate stride values.
 
-**UCF-101 — TimeSformer**
-
-**Description (UCF-101 — TimeSformer):** Maintains high accuracy at full coverage (~0.85) with a moderate decline as coverage decreases; curves for different strides largely overlap, indicating low sensitivity to stride and effective global temporal aggregation through attention.
-
-**UCF-101 — VideoMAE**
-
-**Description (UCF-101 — VideoMAE):** Shows a strong peak for stride-1 at full coverage but high volatility across strides and steep drops at low coverage (large average loss), reflecting reliance on dense temporal context and reconstruction-based representations.
-
-**UCF-101 — ViViT**
-
-**Description (UCF-101 — ViViT):** Exhibits intermediate behavior: strong performance at high coverage with greater separation between stride curves than TimeSformer; this indicates moderate sensitivity to temporal density, particularly for high-frequency classes.
-
-**Kinetics-400 — TimeSformer**
-
-**Description (Kinetics-400 — TimeSformer):** The optimal stride shifts toward larger strides (e.g., stride-4) when ample coverage is available; nonetheless, reducing coverage causes consistent accuracy drops—global attention helps but cannot recover missing temporal information.
-
-**Kinetics-400 — VideoMAE**
-
-**Description (Kinetics-400 — VideoMAE):** Stable at intermediate coverages but sensitive to sparse sampling in high-frequency classes; the curves suggest VideoMAE leverages temporal correlations effectively when they are present.
-
-**Kinetics-400 — ViViT**
-
-**Description (Kinetics-400 — ViViT):** Shows consistent behavior with less inter-stride variance than VideoMAE; moderate declines at reduced coverage indicate robustness for low-to-mid frequency actions.
-
 **Figure 2: Stride-Accuracy Heatmaps** — See Supplementary Figures S1–S6 in the Supplementary Material at the end of this document.
 
 ### 2.2 Statistical Analysis of Temporal Effects
@@ -127,14 +103,11 @@ This section summarizes the inferential statistics for coverage and stride acros
 | Moderate-Sensitivity | 10% < Δ ≤ 25% | 38 | 42 | Sports, tool use, manipulation | Dynamic controlled motions |
 | Low-Sensitivity | Δ ≤ 10% | 51 | 44 | Personal care, locomotion | Gentle, rhythmic, predictable motions |
 
-**Figure 3: Per-Class Representative Trajectories**
+**Figure 3: Representative Class Trajectories (Composite 2×3)**
 
-![UCF-101 TimeSformer Classes](../evaluations/ucf101/timesformer/per_class_representative.png)
-![UCF-101 VideoMAE Classes](../evaluations/ucf101/videomae/per_class_representative.png)
-![UCF-101 ViViT Classes](../evaluations/ucf101/vivit/per_class_representative.png)
-![Kinetics-400 TimeSformer Classes](../evaluations/kinetics400/timesformer/per_class_representative.png)
-![Kinetics-400 VideoMAE Classes](../evaluations/kinetics400/videomae/per_class_representative.png)
-![Kinetics-400 ViViT Classes](../evaluations/kinetics400/vivit/per_class_representative.png)
+![Per-Class Representative Composite](../evaluations/comparative/per_class_representative_composite.png)
+
+**Caption:** Representative class accuracy trajectories (coverage on x-axis, accuracy on y-axis) arranged as a 2×3 panel: rows = datasets (UCF-101, Kinetics-400), columns = models (TimeSformer, VideoMAE, ViViT). Each subplot displays the *same* set of 6 classes for that dataset (3 sensitive + 3 robust) to enable direct cross-model comparison; accuracies are shown as percentages and individual point labels are omitted for clarity. High-resolution per-model images are available in each model folder under `evaluations/`.
 
 **Figure 4: Per-Class Distribution by Coverage**
 
