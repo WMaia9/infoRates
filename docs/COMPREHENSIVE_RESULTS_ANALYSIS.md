@@ -80,13 +80,12 @@ All training and distributed evaluation experiments were executed on the host `m
 
 > **Note:** "Peak" is the single best coverage×stride configuration found across all experiments; "Mean @X%" reports the mean ± std across strides at that coverage level.
 
-**Figure 1: Coverage Degradation Patterns Across All Architectures and Datasets (Composite 2×3)**
 
-![Coverage Degradation Composite](../evaluations/comparative/coverage_degradation_composite.png)
+**Figure 1: Coverage–Stride Interactions (Composite 2×3)**
 
-**Caption:** Coverage vs accuracy curves for each dataset × model arranged as a 2×3 panel (rows: UCF-101, Kinetics-400; columns: TimeSformer, VideoMAE, ViViT). Each subplot shows coverage (x-axis) vs mean accuracy across classes (y-axis) for all strides; legends indicate stride values.
+![Coverage-Stride Interactions](../evaluations/comparative/coverage_stride_interactions.png)
 
-**Figure 2: Stride-Accuracy Heatmaps** — See Supplementary Figures S1–S6 in the Supplementary Material at the end of this document.
+**Caption:** Mean Top-1 accuracy (%) across coverage (rows) and stride (columns) for each dataset × model (UCF-101, Kinetics-400 × TimeSFormer, VideoMAE, ViViT). Each cell displays mean accuracy for that configuration; the matrix visualizes coverage×stride interactions and identifies combinations that are particularly robust or vulnerable to aliasing. Notably, dense sampling (stride-1) at low coverage mitigates accuracy loss, while sparse sampling amplifies aliasing effects. This figure provides a comprehensive overview of the interplay between temporal extent and sampling density, guiding optimal parameter selection for real-world deployments. See Supplementary Figures S1–S6 for per-model details.
 
 ### 2.2 Statistical Analysis of Temporal Effects
 
@@ -103,26 +102,26 @@ This section summarizes the inferential statistics for coverage and stride acros
 | Moderate-Sensitivity | 10% < Δ ≤ 25% | 38 | 42 | Sports, tool use, manipulation | Dynamic controlled motions |
 | Low-Sensitivity | Δ ≤ 10% | 51 | 44 | Personal care, locomotion | Gentle, rhythmic, predictable motions |
 
+
+**Figure 2: Coverage Degradation Patterns (Composite 2×3)**
+
+![Coverage Degradation Composite](../evaluations/comparative/coverage_degradation_composite.png)
+
+**Caption:** Coverage vs mean Top-1 accuracy across classes for each dataset × model arranged as a 2×3 panel (rows: UCF-101, Kinetics-400; columns: TimeSFormer, VideoMAE, ViViT). Curves show accuracy (%) averaged across classes for each stride at the listed coverage levels. The figure reveals that all models experience monotonic accuracy degradation as temporal coverage is reduced, but the rate and severity of decline are architecture- and dataset-dependent. VideoMAE on UCF-101 is most sensitive to coverage loss, while TimeSFormer is relatively robust at moderate strides. These results empirically validate the Nyquist-Shannon principle in video recognition and highlight the need for careful coverage–stride trade-offs. Per-model stride–accuracy heatmaps are provided in Supplementary Figures S1–S6 for detailed analysis.
+
+
 **Figure 3: Representative Class Trajectories (Composite 2×3)**
 
 ![Per-Class Representative Composite](../evaluations/comparative/per_class_representative_composite.png)
 
-**Caption:** Representative class accuracy trajectories (coverage on x-axis, accuracy on y-axis) arranged as a 2×3 panel: rows = datasets (UCF-101, Kinetics-400), columns = models (TimeSformer, VideoMAE, ViViT). Each subplot displays the *same* set of 6 classes for that dataset (3 sensitive + 3 robust) to enable direct cross-model comparison; accuracies are shown as percentages and individual point labels are omitted for clarity. High-resolution per-model images are available in each model folder under `evaluations/`.
+**Caption:** Accuracy trajectories for six representative action classes per dataset (three most sensitive, three most robust), shown for each model and dataset in a 2×3 panel. Sensitive classes (dashed lines) exhibit the largest mean accuracy drops from 100% to 25% coverage, while robust classes (solid lines) maintain high accuracy and low variance across all coverage levels. For UCF-101, sensitive classes include YoYo, JumpingJack, and SalsaSpin; robust classes are Billiards, Bowling, and Typing. For Kinetics-400, sensitive classes are diving cliff, waiting in line, and dunking basketball; robust classes are shearing sheep (mean acc = 99.0%, var = 2.3), playing harp (mean acc = 96.4%, var = 4.7), and bowling (mean acc = 91.0%, var = 4.0). This figure demonstrates the extreme heterogeneity in temporal requirements: some actions degrade catastrophically with reduced coverage, while others are nearly invariant. The selection procedure is fully reproducible from the provided CSVs and detailed in Supplementary Table S1. These results highlight the importance of per-class analysis for understanding and mitigating aliasing effects in real-world deployments.
 
-**Figure 4: Per-Class Distribution by Coverage**
+
+**Figure 4: Per-Class Distribution by Coverage (Composite 2×3)**
 
 ![Per-Class Distributions (Composite)](../evaluations/comparative/per_class_distribution_composite.png)
 
-**Figure X (Composite):** Per-class accuracy distributions at stride=8 across coverage levels, arranged as a 2×3 panel (rows: UCF-101, Kinetics-400; columns: TimeSformer, VideoMAE, ViViT). Medians are annotated above each box for clarity; individual point labels have been removed for readability. If you prefer separate per-model panels, high-resolution per-model images are available in each model directory (e.g., `evaluations/ucf101/timesformer/per_class_distribution_by_coverage.png`).
-
-![Coverage-Stride Interactions](../evaluations/comparative/coverage_stride_interactions.png)
-
-**Figure X: Coverage–Stride Interactions.** Mean accuracy (color) across coverage (rows) and stride (columns) for each dataset × model (UCF-101, Kinetics-400 × TimeSformer, VideoMAE, ViViT). Each cell displays mean accuracy for that configuration; white text indicates poorer performance while darker colors indicate higher accuracy.
-
-**Key Patterns**:
-- At full coverage: Architecture-specific optimal strides (TimeSformer: stride-8, VideoMAE/ViViT: stride-1)
-- At reduced coverage: Dense sampling (stride-1) provides robustness across architectures
-- Sparse sampling amplifies aliasing effects at low coverage levels
+**Caption:** Distributions of per-class accuracy at stride = 8 for each coverage level, visualized as boxplots and violin plots for all models and datasets. The figure reveals that as coverage decreases, the spread of per-class accuracy widens dramatically, indicating that some classes are highly robust while others are extremely sensitive to temporal undersampling. This supports the finding of significant variance heterogeneity (see Figure 5 and Supplementary Table S1). The results emphasize that mean accuracy alone is insufficient: understanding the full distribution is critical for robust system design. High-resolution per-model panels are available in the evaluations directory.
 
 ## 2.4 Statistical Hypothesis Testing
 
@@ -159,11 +158,11 @@ For **UCF-101 VideoMAE** pairwise comparisons show even larger effects at low co
 **Pattern**: The pairwise tests confirm rapid degradation at low coverage and relative stability at high coverage. For **UCF-101 TimeSformer**, Bonferroni-corrected significance (α = 0.005) retains the most severe low-coverage transitions **involving 10% (10%→50%, 10%→75%, 10%→100%)**, whereas moderate transitions such as 10%→25% or 25%→100% do not survive the correction.
 
 ### 2.4.4 Variance Heterogeneity
-Levene's tests indicate significant heterogeneity of variances across coverage levels for most dataset–architecture combinations (e.g., UCF-101 VideoMAE: Levene p < 1e-20), confirming that variance increases as coverage decreases. This supports our observation that class-level temporal requirements drive heterogeneous aliasing sensitivity (illustrated in Figure 6).
+Levene's tests indicate significant heterogeneity of variances across coverage levels for most dataset–architecture combinations (e.g., UCF-101 VideoMAE: Levene p < 1e-20), confirming that variance increases as coverage decreases. This supports our observation that class-level temporal requirements drive heterogeneous aliasing sensitivity (illustrated in Figure 5).
 
-![Figure 6: Variance Analysis](../evaluations/kinetics400/timesformer/per_class_distribution_by_coverage.png)
+![Figure 5: Variance Analysis](../evaluations/kinetics400/timesformer/per_class_distribution_by_coverage.png)
 
-**Figure 6.** Distribution of per-class accuracies at stride=1 across coverage levels. Left: boxplot showing median, quartiles, and outliers. Right: violin plot revealing increasing spread at reduced coverage.
+**Figure 5.** Per-class accuracy distributions at stride = 1 across coverage levels. Boxplots (left) display medians and quartiles while violin plots (right) show full distribution shapes; the figure demonstrates that inter-class variance increases sharply as coverage decreases, indicating heterogeneous aliasing sensitivity across action classes.
 
 ## 2.5 Action Frequency Taxonomy
 
@@ -177,11 +176,11 @@ Based on empirical aliasing sensitivity, we propose a three-tier motion-frequenc
 | Moderate-Sensitivity | $10\% < \Delta \leq 20\%$ | 193 | flying kite, breakdancing, snowmobiling | Dynamic controlled motion |
 | Low-Sensitivity | $\Delta \leq 10\%$ | 100 | massaging, swinging legs, robot dancing | Gentle, rhythmic, or mechanical motion |
 
-Figure 7 visualizes mean accuracy trajectories for each tier with error bands.
+Figure 6 visualizes mean accuracy trajectories for each tier with error bands.
 
-![Figure 7: Sensitivity Tiers](../evaluations/kinetics400/timesformer/per_class_sensitivity_tiers.png)
+![Figure 6: Sensitivity Tiers](../evaluations/kinetics400/timesformer/per_class_sensitivity_tiers.png)
 
-**Figure 7.** Action classes grouped by aliasing sensitivity tier. High-sensitivity tier (107 classes, $\Delta > 20\%$) exhibits significant degradation below 75% coverage. Moderate-sensitivity tier (193 classes) degrades predictably with coverage reduction. Low-sensitivity tier (100 classes) maintains >70% accuracy even at 10% coverage, demonstrating robustness to aggressive temporal undersampling. Error bands represent ±1 standard deviation within each tier.
+**Figure 6.** Action classes grouped by aliasing sensitivity tier. High-sensitivity tier (Δ > 20%; 107 classes) exhibits the steepest degradation with reduced coverage, moderate-sensitivity (10–20%; 193 classes) shows predictable declines, and low-sensitivity (Δ ≤ 10%; 100 classes) retains high accuracy even at 10% coverage. Error bands represent ±1 standard deviation and highlight intra-tier variability.
 
 ---
 
