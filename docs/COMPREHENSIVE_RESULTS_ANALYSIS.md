@@ -79,7 +79,7 @@ All training and distributed evaluation experiments were executed on the host `m
 | Kinetics-400 | ViViT | 76.19% (100%, stride-1) | 76.02% ± 0.27% | stride-1 (76.19%) | 74.86% ± 1.61% | 73.10% ± 1.73% | 67.78% ± 1.53% | 60.81% ± 2.25% | -8.23% | 0.41 | 1.8 |
 
 
-> **Note:** "Peak" is the single best coverage×stride configuration found across all experiments; "Mean @X%" reports the mean ± std across strides at that coverage level.
+> **Note:** "Peak" is the single best coverage×stride configuration found across all experiments; **"Mean @X%" reports the mean ± std across strides at that coverage level (i.e., mean of per-configuration accuracies for that coverage, averaged over strides).** For per-class summaries (mean and std across classes at each coverage) see the per-model files `evaluations/*/summary_statistics_by_coverage.csv` and Supplementary Table S1.
 
 
 **Figure 1: Coverage–Stride Interactions (Composite 2×3)**
