@@ -1,16 +1,9 @@
 #!/usr/bin/env python3
 import sys
-import pandas as pd
 from pathlib import Path
 
-def fix_csv(path: Path, old_root: str, new_root: str, column: str = "video_path"):
-    df = pd.read_csv(path)
-    if column in df.columns:
-        df[column] = df[column].astype(str).str.replace(old_root, new_root, regex=False)
-        df.to_csv(path, index=False)
-        print(f"✓ Updated {path} ({old_root} -> {new_root})")
-    else:
-        print(f"! Skipped {path}: missing column '{column}'")
+from info_rates.data_utils import replace_manifest_paths
+
 
 def main():
     if len(sys.argv) < 4:
@@ -18,8 +11,9 @@ def main():
         sys.exit(1)
     old_root = sys.argv[1]
     new_root = sys.argv[2]
-    for p in sys.argv[3:]:
-        fix_csv(Path(p), old_root, new_root)
+    manifests = [Path(p) for p in sys.argv[3:]]
+    replace_manifest_paths(old_root, new_root, manifests)
+
 
 if __name__ == "__main__":
     main()

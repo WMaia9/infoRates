@@ -8,6 +8,8 @@ Key entry points
 - Training (multi-model, DDP-ready): scripts/data_processing/train_ddp.sh → launches scripts/data_processing/train_multimodel.py
 - Evaluation (multi-model): scripts/evaluation/run_eval_multimodel.py
 - Plotting (all analysis plots): scripts/plotting/generate_analysis_plots.py --model MODEL --dataset DATASET
+- Data management (build manifests, fix paths, download subsets): `scripts/manage_data.py` (subcommands: `build-manifest`, `fix-manifest`, `download`)
+- Archived scripts: `scripts/archived/` contains deprecated scripts preserved for provenance; prefer `scripts/manage_data.py` for new workflows.
 - Legacy DDP eval of a saved model: scripts/evaluation/run_eval.py and scripts/data_processing/pipeline_eval.sh
 
 Setup

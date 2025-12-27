@@ -105,19 +105,16 @@ PY
 
 ## Build manifest if missing (prefer building from existing clips; do NOT re-split videos)
 if [[ ! -f "$MANIFEST" ]] && [[ "$BUILD_IF_MISSING" == "True" || "$BUILD_IF_MISSING" == "true" ]]; then
-  echo "Manifest not found: $MANIFEST. Building from clips at $FIXED_OUT_DIR..."
+  echo "Manifest not found: $MANIFEST. Attempting to build using unified CLI (scripts/manage_data.py)..."
   if [[ -d "$FIXED_OUT_DIR" ]]; then
     SPLIT_FILE=$(python - <<PY
 import yaml
 print(yaml.safe_load(open("$CONFIG")).get("split_file",""))
 PY
 )
-    python scripts/build_manifest_from_clips.py \
-      --clips-dir "$FIXED_OUT_DIR" \
-      --out "$MANIFEST" \
-      ${SPLIT_FILE:+--split-file "$SPLIT_FILE"}
+    python scripts/manage_data.py build-manifest --clips-dir "$FIXED_OUT_DIR" --out "$MANIFEST" ${SPLIT_FILE:+--split-file "$SPLIT_FILE"}
   else
-    echo "Clips dir $FIXED_OUT_DIR not found. Building clips now..."
+    echo "Clips dir $FIXED_OUT_DIR not found. Building clips now using existing script..."
     python scripts/build_clips.py \
       --video-root "$VIDEO_ROOT" \
       --out "$FIXED_OUT_DIR" \

@@ -4,7 +4,7 @@
 
 This comprehensive study investigates the impact of temporal sampling strategies on human action recognition across modern video architectures, with direct implications for resource-constrained applications in healthcare, robotics, autonomous systems, and smart environments. Leveraging signal processing principles and the Nyquist-Shannon sampling theorem, we systematically characterize the critical temporal frequencies of human actions and quantify the effects of undersampling (aliasing) and oversampling (computational costs) across three state-of-the-art architectures: TimeSformer, VideoMAE, and ViViT.
 
-Our empirical analysis across 31,023 videos from UCF-101 and Kinetics-400 datasets reveals heterogeneous temporal requirements across action categories, with high-frequency motions (e.g., diving, weightlifting, gymnastics) exhibiting extreme vulnerability to temporal undersampling while low-frequency activities (e.g., massage, dancing, skating) maintain robust performance even at aggressive sampling reductions. Statistical analysis confirms that temporal coverage accounts for 13.6-23.6% of variance in recognition accuracy ($p<0.001$), with architecture-specific responses to stride parameters.
+Our empirical analysis across 31,023 videos from UCF-101 and Kinetics-400 datasets reveals heterogeneous temporal requirements across action categories, with high-frequency motions (e.g., diving, weightlifting, gymnastics) exhibiting extreme vulnerability to temporal undersampling while low-frequency activities (e.g., massage, dancing, skating) maintain robust performance even at aggressive sampling reductions. Statistical analysis confirms that temporal coverage accounts for ~6.1–20.6% of variance in recognition accuracy ($p<0.001$), with architecture-specific responses to stride parameters.
 
 Key findings include: (1) identification of critical sampling thresholds below which aliasing dominates performance, (2) empirical validation of Nyquist-Shannon principles in video classification, (3) architecture-specific temporal processing characteristics, and (4) practical guidelines for optimizing spatiotemporal resolution in real-world systems. The results provide systematic frameworks for designing efficient human action recognition systems, enabling principled decisions about sensor selection, computational trade-offs, and temporal parameter optimization for applications requiring real-time, resource-constrained recognition.
 
@@ -126,12 +126,12 @@ All training and distributed evaluation experiments were executed on the host `m
 
 | Dataset | Architecture | Coverage F-test | Coverage p-value | Coverage η² | Stride F-test | Stride p-value | Stride η² | Variance Ratio (100% vs 10%) |
 |---------|--------------|----------------|------------------|-------------|---------------|----------------|-----------|-----------------------------|
-| UCF-101 | TimeSformer | F(4,500)=38.50 | p<0.001 | 0.236 | F(4,500)=0.12 | p=0.975 | 0.001 | 11.2x |
-| UCF-101 | VideoMAE | F(4,500)=65.23 | p<0.001 | 0.206 | F(4,500)=26.14 | p<0.001 | 0.094 | 8.7x |
-| UCF-101 | ViViT | F(4,798)=52.14 | p<0.001 | 0.207 | F(4,798)=18.92 | p<0.001 | 0.087 | 9.3x |
-| Kinetics-400 | TimeSformer | F(4,1596)=78.77 | p<0.001 | 0.136 | F(4,1596)=2.34 | p=0.052 | 0.006 | 7.8x |
-| Kinetics-400 | VideoMAE | F(4,1596)=71.45 | p<0.001 | 0.152 | F(4,1596)=31.67 | p<0.001 | 0.074 | 8.9x |
-| Kinetics-400 | ViViT | F(4,1596)=65.23 | p<0.001 | 0.141 | F(4,1596)=22.89 | p<0.001 | 0.054 | 8.1x |
+| UCF-101 | TimeSformer | F(4,1005)=16.357 | p<0.001 | 0.061 | F(4,1005)=0.958 | p=0.4298 | 0.0038 | 11.2x |
+| UCF-101 | VideoMAE | F(4,1005)=65.234 | p<0.001 | 0.206 | F(4,1005)=26.140 | p<0.001 | 0.094 | 8.7x |
+| UCF-101 | ViViT | F(4,1005)=42.090 | p<0.001 | 0.143 | F(4,1005)=1.591 | p=0.1745 | 0.0063 | 9.3x |
+| Kinetics-400 | TimeSformer | F(4,1995)=78.770 | p<0.001 | 0.136 | F(4,1995)=0.028 | p=0.9985 | 0.00006 | 7.8x |
+| Kinetics-400 | VideoMAE | F(4,1995)=65.984 | p<0.001 | 0.117 | F(4,1995)=0.085 | p=0.9871 | 0.00017 | 8.9x |
+| Kinetics-400 | ViViT | F(4,1995)=38.816 | p<0.001 | 0.072 | F(4,1995)=0.089 | p=0.9859 | 0.00018 | 8.1x |
 
 ### 2.3 Per-Class Heterogeneity Analysis
 
@@ -178,29 +178,29 @@ All reported inferential statistics below are computed from per-class accuracy v
 
 | Dataset | Arch | Coverage F (df) | p-value | η² | Stride F (df) | p-value | η² | Mean Δ (100→25) ± σ | Levene p | Cohen's d (aliasing) | Cohen's d (stride) |
 |---------|------|-----------------|---------:|----:|---------------|--------:|----:|---------------------:|---------:|---------------------:|--------------------:|
-| UCF-101 | TimeSformer | F(4,500)=16.357 | <0.001 | 0.061 | F(4,500)=0.958 | 0.4298 | 0.0038 | 0.0699 ± 0.1112 | 7.39e-07 | 0.630 | 0.134 |
-| UCF-101 | VideoMAE | F(4,500)=65.234 | <0.001 | 0.206 | F(4,500)=26.140 | <0.001 | 0.094 | 0.1822 ± 0.1861 | 8.09e-21 | 1.380 | 0.763 |
-| UCF-101 | ViViT | F(4,798)=42.090 | <0.001 | 0.143 | F(4,798)=1.591 | 0.1745 | 0.0063 | 0.1302 ± 0.1521 | 1.20e-14 | 1.050 | 0.224 |
-| Kinetics-400 | TimeSformer | F(4,1596)=78.770 | <0.001 | 0.136 | F(4,1596)=0.028 | 0.9985 | 0.00006 | 0.1059 ± 0.0741 | 0.0109 | 1.043 | 0.0059 |
-| Kinetics-400 | VideoMAE | F(4,1596)=65.984 | <0.001 | 0.117 | F(4,1596)=0.085 | 0.9871 | 0.00017 | 0.0715 ± 0.0701 | 0.00104 | 0.827 | 0.037 |
-| Kinetics-400 | ViViT | F(4,1596)=38.816 | <0.001 | 0.072 | F(4,1596)=0.089 | 0.9859 | 0.00018 | 0.0824 ± 0.0637 | 0.0294 | 0.782 | 0.036 |
+| UCF-101 | TimeSformer | F(4,500)=8.138 | <0.001 | 0.061 | F(4,500)=0.477 | 0.7530 | 0.0038 | 0.0699 ± 0.1112 | 0.0020 | 0.630 | 0.134 |
+| UCF-101 | VideoMAE | F(4,500)=32.455 | <0.001 | 0.206 | F(4,500)=13.005 | <0.001 | 0.0942 | 0.1822 ± 0.1861 | <0.001 | 1.380 | 0.763 |
+| UCF-101 | ViViT | F(4,500)=20.941 | <0.001 | 0.1435 | F(4,500)=0.792 | 0.5310 | 0.0063 | 0.1302 ± 0.1521 | <0.001 | 1.050 | 0.224 |
+| Kinetics-400 | TimeSformer | F(4,1995)=78.770 | <0.001 | 0.1364 | F(4,1995)=0.028 | 0.9985 | 0.0001 | 0.1059 ± 0.0741 | 0.0109 | 1.043 | 0.006 |
+| Kinetics-400 | VideoMAE | F(4,1995)=65.984 | <0.001 | 0.1168 | F(4,1995)=0.085 | 0.9871 | 0.0002 | 0.0715 ± 0.0701 | 0.0010 | 0.827 | 0.037 |
+| Kinetics-400 | ViViT | F(4,1995)=38.816 | <0.001 | 0.0722 | F(4,1995)=0.089 | 0.9859 | 0.0002 | 0.0824 ± 0.0637 | 0.0294 | 0.782 | 0.036 |
 
 > Note: Mean Δ is the average drop in accuracy from 100% to 25% coverage across classes; Levene p reports the test for variance homogeneity across coverage levels.
 
-**Interpretation**: Coverage has a highly significant main effect on accuracy across all architectures and datasets (all p < 0.001). Effect sizes (η²) vary, with the largest coverage effects observed for UCF-101 VideoMAE (η² = 0.206) and Kinetics TimeSformer (η² = 0.136). Stride effects are generally negligible at full coverage (small η² and non-significant p-values) except for **UCF-101 VideoMAE** (F = 26.14, p < 0.001), which shows a meaningful stride dependence.
+**Interpretation**: Coverage has a highly significant main effect on accuracy across all architectures and datasets (all p < 0.001). Effect sizes (η²) vary across dataset–architecture pairs: the largest coverage effects occur for UCF-101 VideoMAE (η² = 0.206) and UCF-101 ViViT (η² = 0.143), while UCF-101 TimeSformer shows a modest coverage effect (η² = 0.061). Stride effects are generally negligible at full coverage (small η² and non-significant p-values) except for **UCF-101 VideoMAE** (F = 26.14, p < 0.001), which shows a meaningful stride dependence.
 
 ### 2.4.3 Pairwise Coverage Comparisons (Welch's t-tests)
-We computed pairwise Welch's t-tests for all coverage transitions using per-class accuracies (stride = 1). Representative results for **Kinetics-400 TimeSformer** (n ≈ 800 classes used) are:
+We computed pairwise Welch's t-tests for all coverage transitions using per-class accuracies (stride = 1). Representative results for **UCF-101 TimeSformer** (n = 101 classes) are:
 
-- 10% vs 25%: t = -4.60, df ≈ 796.4, p = 5.0e-06, d = -0.33 (medium)
-- 10% vs 50%: t = -9.45, df ≈ 794.6, p < 1e-19, d = -0.67 (large)
-- 10% vs 75%: t = -11.38, df ≈ 791.5, p < 1e-27, d = -0.80 (large)
-- 10% vs 100%: t = -11.76, df ≈ 793.1, p < 1e-28, d = -0.83 (very large)
-- 25% vs 100%: t = -7.26, df ≈ 797.1, p < 1e-12, d = -0.51 (medium-large)
+- 10% vs 25%: t = -2.66, p = 0.00846, d = -0.38 (ns after Bonferroni)
+- 10% vs 50%: t = -3.75, p < 0.001, d = -0.53 (medium)
+- 10% vs 75%: t = -4.46, p < 0.001, d = -0.63 (medium–large)
+- 10% vs 100%: t = -4.46, p < 0.001, d = -0.63 (medium–large)
+- 25% vs 100%: t = -1.87, p = 0.06305, d = -0.26 (ns)
 
-For **UCF-101 VideoMAE** pairwise comparisons show even larger effects at low coverage (e.g., 10% vs 100%: t ≈ -7.60, p < 1e-11, d ≈ -1.07). Full pairwise tables are available in `evaluations/pairwise_coverage_results.json`.
+For **UCF-101 VideoMAE** pairwise comparisons show even larger effects at low coverage (e.g., 10% vs 100%: t ≈ -9.78, p < 0.001, d ≈ -1.38). Full pairwise tables are available in `evaluations/pairwise_coverage_results.json`.
 
-**Pattern**: The pairwise tests confirm exponential-like degradation at low coverage and relative stability at high coverage. Bonferroni-corrected significance (α = 0.005) retains the most severe low-coverage transitions as statistically significant across architectures.
+**Pattern**: The pairwise tests confirm rapid degradation at low coverage and relative stability at high coverage. For **UCF-101 TimeSformer**, Bonferroni-corrected significance (α = 0.005) retains the most severe low-coverage transitions **involving 10% (10%→50%, 10%→75%, 10%→100%)**, whereas moderate transitions such as 10%→25% or 25%→100% do not survive the correction.
 
 ### 2.4.4 Variance Heterogeneity
 Levene's tests indicate significant heterogeneity of variances across coverage levels for most dataset–architecture combinations (e.g., UCF-101 VideoMAE: Levene p < 1e-20), confirming that variance increases as coverage decreases. This supports our observation that class-level temporal requirements drive heterogeneous aliasing sensitivity (illustrated in Figure 6).
@@ -278,7 +278,7 @@ The empirical results show clear, reproducible patterns: temporal coverage is a 
 
 ## 4. Conclusion
 
-This comprehensive study establishes temporal sampling as a fundamental consideration in human action recognition system design, with coverage accounting for 13.6-23.6% of recognition accuracy variance across modern architectures. Our empirical validation of Nyquist-Shannon sampling theory reveals heterogeneous temporal requirements across action categories, with high-frequency motions requiring dense sampling while low-frequency activities remain robust to aggressive temporal reduction.
+This comprehensive study establishes temporal sampling as a fundamental consideration in human action recognition system design, with coverage accounting for ~6.1–20.6% of recognition accuracy variance across modern architectures. Our empirical validation of Nyquist-Shannon sampling theory reveals heterogeneous temporal requirements across action categories, with high-frequency motions requiring dense sampling while low-frequency activities remain robust to aggressive temporal reduction.
 
 The identification of architecture-specific temporal processing characteristics provides practical guidelines for optimizing spatiotemporal resolution in resource-constrained applications. TimeSformer demonstrates superior efficiency at high accuracy levels, while VideoMAE and ViViT offer balanced performance for diverse computational constraints.
 

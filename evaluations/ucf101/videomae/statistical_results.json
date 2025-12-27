@@ -1,13 +1,13 @@
 {
   "anova_coverage": {
-    "f_statistic": 65.23398591791447,
-    "p_value": 4.425704096494148e-49,
-    "eta_squared": 0.20612096921338138
+    "f_statistic": 32.454719362146506,
+    "p_value": 4.560286272911874e-24,
+    "eta_squared": 0.20612096921338102
   },
   "anova_stride": {
-    "f_statistic": 26.139639278446428,
-    "p_value": 1.2158452170121931e-20,
-    "eta_squared": 0.0942343749623869
+    "f_statistic": 13.004795660918614,
+    "p_value": 4.4071938387014604e-10,
+    "eta_squared": 0.094234374962387
   },
   "aliasing_sensitivity": {
     "mean_drop": 0.18223257930070275,
@@ -16,11 +16,11 @@
     "min_drop": -0.34237288135593225
   },
   "variance_homogeneity": {
-    "levene_statistic": 26.36904285087644,
-    "p_value": 8.087929237430448e-21
+    "levene_statistic": 13.11892679148082,
+    "p_value": 3.6116391215278104e-10
   },
   "effect_sizes": {
-    "aliasing_cohens_d": 1.3799503193573772,
-    "stride_cohens_d": 0.7628074539776624
+    "aliasing_cohens_d": 1.376513326923694,
+    "stride_cohens_d": 0.7609075569952117
   }
 }

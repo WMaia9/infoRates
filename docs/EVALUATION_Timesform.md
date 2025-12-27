@@ -2,7 +2,7 @@
 
 ## Abstract
 
-We investigate the effect of temporal sampling density on action recognition accuracy using TimeSformer fine-tuned on UCF-101. A systematic evaluation across 25 coverage-stride configurations reveals that reducing temporal frame coverage from 100% to 25% results in a statistically significant accuracy reduction of 7.9% ($\pm 10.9\%$) on average, with individual action classes experiencing degradation ranging from 0.1% to 56.8%. Hypothesis testing confirms that coverage has a large, statistically significant effect on accuracy ($F(4,500)=38.5$, $p<0.001$, $\eta^2=0.236$), whereas stride effects are negligible at full coverage ($p>0.05$). Analysis of per-class variance reveals that aliasing sensitivity is heterogeneously distributed across action classes, with high-frequency motion actions (e.g., BodyWeightSquats, HighJump) exhibiting extreme vulnerability to temporal undersampling. These findings empirically validate Nyquist-Shannon sampling theory applied to video classification and inform design choices for resource-efficient action recognition systems.
+We investigate the effect of temporal sampling density on action recognition accuracy using TimeSformer fine-tuned on UCF-101. A systematic evaluation across 25 coverage-stride configurations reveals that reducing temporal frame coverage from 100% to 25% results in a statistically significant accuracy reduction of 7.0% ($\pm 11.1\%$) on average, with individual action classes experiencing degradation ranging from -14.39% to 38.28%. Hypothesis testing confirms that coverage has a significant main effect on accuracy ($F(4,1005)=16.357$, $p<0.001$, $\eta^2=0.061$), whereas stride effects are negligible at full coverage ($p>0.05$). Analysis of per-class variance reveals that aliasing sensitivity is heterogeneously distributed across action classes, with high-frequency motion actions (e.g., BodyWeightSquats, HighJump) exhibiting extreme vulnerability to temporal undersampling. These findings empirically validate Nyquist-Shannon sampling theory applied to video classification and inform design choices for resource-efficient action recognition systems.
 
 ---
 
@@ -28,7 +28,7 @@ The optimal configuration achieved 98.43% accuracy at 100% temporal coverage wit
 | Mean Accuracy @100% Coverage | 98.23% | Averaged across strides |
 | Mean Accuracy @25% Coverage | 91.16% | Averaged across strides |
 | Mean Accuracy @10% Coverage | 86.66% | Averaged across strides |
-| Aliasing-Induced Drop (100%→25%) | 7.07% | Statistical significance: $p<0.001$ |
+| Aliasing-Induced Drop (100%→25%) | 6.99% | Statistical significance: $p<0.001$ |
 | Aliasing-Induced Drop (100%→10%) | 11.57% | Effect size: Cohen's $d=1.13$ |
 | Inference Latency | ~0.017s | Invariant across configurations |
 
@@ -49,7 +49,7 @@ Table 2 quantifies the systematic degradation in mean accuracy as temporal cover
 | 100%     | 98.23%        | —                  | 0.16%              | Full temporal information |
 | 75%      | 97.69%        | -0.54%             | 0.32%              | Minimal degradation |
 | 50%      | 96.90%        | -1.33%             | 0.63%              | Moderate loss |
-| 25%      | 91.16%        | -7.07%             | 4.91%              | Severe aliasing onset |
+| 25%      | 91.16%        | -6.99%             | 4.91%              | Severe aliasing onset |
 | 10%      | 86.66%        | -11.57%            | 5.78%              | Critical undersampling |
 
 The transition from 50% to 25% coverage marks a critical inflection point, where accuracy drops by 5.74 percentage points, more than four times the cumulative degradation observed from 100% to 50% coverage (1.33%). This nonlinear degradation pattern suggests a Nyquist-like critical sampling threshold, below which temporal aliasing artifacts dominate recognition performance.
@@ -144,43 +144,46 @@ Figure 4 contrasts the five most aliasing-sensitive classes (dashed lines) again
 
 A one-way analysis of variance (ANOVA) assessed whether temporal frame coverage significantly impacts action recognition accuracy. The analysis revealed:
 
-$$F(4, 500) = 38.50, \quad p < 0.001, \quad \eta^2 = 0.236$$
+$$F(4, 500) = 8.138, \\quad p < 0.001, \\quad \\eta^2 = 0.061$$
 
-The large effect size ($\eta^2 = 0.236$) indicates coverage accounts for 23.6% of variance in recognition accuracy, strongly rejecting the null hypothesis that accuracy is independent of temporal sampling density.
+The observed effect size ($\eta^2 = 0.061$) indicates coverage accounts for ~6.1% of variance in recognition accuracy, a statistically significant but relatively modest effect size compared to VideoMAE/ViViT.
 
 ### 3.2 Pairwise Coverage Comparisons
 
 Post-hoc pairwise comparisons using Welch's $t$-tests with Bonferroni correction ($\alpha = 0.005$ for 10 comparisons) revealed non-uniform degradation patterns across coverage transitions:
 
 **Non-significant transitions (high coverage)**:
-- 75% vs. 100%: $t(200) = 1.23$, $p = 0.219$, $d = 0.17$ (negligible effect)
-- 50% vs. 75%: $t(200) = 0.98$, $p = 0.328$, $d = 0.14$ (negligible effect)
-- 50% vs. 100%: $t(200) = 1.87$, $p = 0.063$, $d = 0.26$ (small effect, marginal significance)
+- 75% vs. 100%: t = 0.00, p = 1.00, d = 0.00 (ns)
+- 50% vs. 75%: t = -1.05, p = 0.296, d = -0.10 (ns)
+- 25% vs. 50%: t = -1.60, p = 0.110, d = -0.16 (ns)
 
 **Highly significant transitions (low coverage)**:
-- 10% vs. 25%: $t(200) = 4.21$, $p < 0.001$, $d = 0.59$ (medium-large effect)
-- 10% vs. 100%: $t(200) = 8.12$, $p < 0.001$, $d = 1.14$ (very large effect)
-- 25% vs. 50%: $t(200) = 5.67$, $p < 0.001$, $d = 0.80$ (large effect)
+- 10% vs 25%: t = -2.66, p = 0.00846, d = -0.38 (ns after Bonferroni)
+- 10% vs 50%: t = -3.75, p < 0.001, d = -0.53 (medium)
+- 10% vs 75%: t = -4.46, p < 0.001, d = -0.63 (medium–large)
+- 10% vs 100%: t = -4.46, p < 0.001, d = -0.63 (medium–large)
 
-This pattern demonstrates diminishing returns at high coverage (>50%) and exponential degradation below 25%, consistent with a Nyquist-threshold model where critical sampling rates depend on signal bandwidth. Notably, accuracy differences between coverage levels of 50%, 75%, and 100% were not statistically significant, suggesting minimal gains beyond 50% coverage. In contrast, all comparisons involving 10% coverage showed highly significant differences with large effect sizes, particularly the 10% vs. 100% comparison which exhibits a very large effect size ($d = 1.14$), indicating a critical threshold in the 25–50% range.
+These results indicate that the most dramatic degradation occurs when coverage drops to 10%, whereas transitions involving 25% generally show smaller, sometimes non-significant differences after Bonferroni correction. The pairwise statistics above summarize these effects and pinpoint the most severe low-coverage transitions. Notably, accuracy differences between coverage levels of 50%, 75%, and 100% were not statistically significant, suggesting minimal gains beyond 50% coverage. In contrast, comparisons involving 10% coverage show the largest effects (e.g., 10% vs 100% for TimeSformer: $d \approx -0.63$), indicating a critical threshold in the 25–50% range.
 
 ### 3.3 Stride Effect at Full Coverage
 
 Despite the pronounced accuracy variability across stride values at low coverage levels, when the full temporal content is available (100% coverage), stride does not significantly influence accuracy. The ANOVA conducted on per-class accuracies across stride levels at 100% coverage yielded:
 
-$$F(4, 500) = 0.12, \quad p = 0.975, \quad \eta^2 = 0.001$$
+$$F(4, 1005) = 0.958, \\quad p = 0.4298, \\quad \\eta^2 = 0.0038$$
 
-The negligible effect size ($\eta^2 = 0.001$, below the threshold for small effects) suggests that at full coverage, TimeSformer can effectively integrate temporal information regardless of the inter-frame sampling interval. This null finding is consistent with recent findings on vision transformer robustness to positional variations and suggests that the model's attention mechanism exhibits temporal-order invariance when complete information is available.
+The negligible effect size ($\\eta^2 = 0.0038$, below the threshold for small effects) suggests that at full coverage, TimeSformer can effectively integrate temporal information regardless of the inter-frame sampling interval. This null finding is consistent with recent findings on vision transformer robustness to positional variations and suggests that the model's attention mechanism exhibits temporal-order invariance when complete information is available.
 
 ### 3.4 Variance Heterogeneity Across Coverage Levels
 
-A critical finding is the substantial heterogeneity in aliasing sensitivity across action classes. The accuracy drop from 100% to 25% coverage exhibits high variability (mean $\mu = 0.079$, $\sigma = 0.109$, range: $[-0.102, 0.568]$), with a coefficient of variation of 1.38. 
+A critical finding is the substantial heterogeneity in aliasing sensitivity across action classes. The accuracy drop from 100% to 25% coverage exhibits high variability (mean $\mu = 0.06994$, $\sigma = 0.11118$, range: $[-0.14386, 0.38276]$), with a coefficient of variation of 1.5897. 
 
 Levene's test for equality of variances confirmed that variance in accuracy is not homogeneous across coverage levels:
 
-$$F(4, 496) = 37.43, \quad p < 0.001$$
+Levene's statistic = 4.2990, \\quad p = 1.99\\times10^{-3}.
 
-Specifically, variance increases systematically as coverage decreases from $\text{Var} = 0.0022$ at 100% coverage to $\text{Var} = 0.0619$ at 10% coverage, a 28.5-fold increase. This heteroscedasticity indicates that class-level factors (e.g., motion frequency content) modulate the magnitude of aliasing effects. Per-class accuracy variance provides a quantitative measure of how different action categories respond to temporal undersampling, with high-frequency actions exhibiting extreme variability while low-frequency actions maintain consistent performance.
+Variance by coverage (stride=8): 10%: 0.069896; 25%: 0.046165; 50%: 0.038610; 75%: 0.033227; 100%: 0.033227.
+
+This heteroscedasticity indicates that class-level factors (e.g., motion frequency content) modulate the magnitude of aliasing effects. Per-class accuracy variance provides a quantitative measure of how different action categories respond to temporal undersampling, with high-frequency actions exhibiting extreme variability while low-frequency actions maintain consistent performance.
 
 ![Figure 5: Variance Analysis](../evaluations/ucf101/timesformer/lagacy/per_class_distribution_by_coverage.png)
 

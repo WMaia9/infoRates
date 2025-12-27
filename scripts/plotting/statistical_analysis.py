@@ -30,6 +30,11 @@ out_dir.mkdir(parents=True, exist_ok=True)
 
 df_agg = pd.read_csv(main_csv)
 df_per_class = pd.read_csv(per_class_csv)
+# Deduplicate any repeated per-class entries (keep first occurrence).
+# Some evaluation outputs contained duplicate rows for class×coverage×stride which
+# inflate sample sizes and distort ANOVA/Levene statistics. Removing duplicates
+# ensures correct degrees of freedom and unbiased effect-size estimates.
+df_per_class = df_per_class.drop_duplicates(['class', 'coverage', 'stride'])
 
 print("="*70)
 print("STATISTICAL ANALYSIS: TEMPORAL SAMPLING EFFECTS ON ACTION RECOGNITION")
