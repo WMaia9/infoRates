@@ -142,12 +142,12 @@ All reported inferential statistics below are computed from per-class accuracy v
 
 | Dataset | Arch | Coverage F (df) | Coverage p-value | Coverage η² | Stride F (df) | Stride p-value | Stride η² | Mean Δ (100→25) ± σ | Levene p | Cohen's d (aliasing) | Cohen's d (stride) |
 |---------|------|-----------------|------------------:|------------:|---------------|---------------:|----------:|---------------------:|---------:|---------------------:|--------------------:|
-| UCF-101 | TimeSformer | F(4,500)=8.138 | <0.001 | 0.0611 | F(4,500)=0.477 | 0.753 | 0.0038 | 0.0699 ± 0.1112 | 0.002 | 0.628 | 0.134 |
-| UCF-101 | VideoMAE | F(4,500)=32.455 | <0.001 | 0.2061 | F(4,500)=13.005 | <0.001 | 0.0942 | 0.1822 ± 0.1861 | <0.001 | 1.377 | 0.761 |
-| UCF-101 | ViViT | F(4,500)=20.940 | <0.001 | 0.1435 | F(4,500)=0.792 | 0.531 | 0.0063 | 0.1302 ± 0.1521 | <0.001 | 1.048 | 0.223 |
-| Kinetics-400 | TimeSformer | F(4,1995)=78.770 | <0.001 | 0.1364 | F(4,1995)=0.028 | 0.998 | 0.0001 | 0.1059 ± 0.0741 | 0.011 | 1.043 | 0.006 |
-| Kinetics-400 | VideoMAE | F(4,1995)=65.984 | <0.001 | 0.1168 | F(4,1995)=0.085 | 0.987 | 0.0002 | 0.0715 ± 0.0701 | 0.001 | 0.827 | 0.037 |
-| Kinetics-400 | ViViT | F(4,1995)=38.816 | <0.001 | 0.0722 | F(4,1995)=0.089 | 0.986 | 0.0002 | 0.0824 ± 0.0637 | 0.029 | 0.782 | 0.036 |
+| UCF-101 | TimeSformer | F(4,500)=8.138 | 2.31e-06 | 0.0611 | F(4,500)=0.477 | 7.53e-01 | 0.0038 | 0.0699 ± 0.1112 | 1.99e-03 | 0.628 | 0.134 |
+| UCF-101 | VideoMAE | F(4,500)=32.455 | 4.56e-24 | 0.2061 | F(4,500)=13.005 | 4.41e-10 | 0.0942 | 0.1822 ± 0.1861 | 3.61e-10 | 1.377 | 0.761 |
+| UCF-101 | ViViT | F(4,500)=20.940 | 5.63e-16 | 0.1435 | F(4,500)=0.792 | 5.31e-01 | 0.0063 | 0.1302 ± 0.1521 | 3.64e-07 | 1.048 | 0.223 |
+| Kinetics-400 | TimeSformer | F(4,1995)=78.770 | 4.10e-62 | 0.1364 | F(4,1995)=0.028 | 9.98e-01 | 0.0001 | 0.1059 ± 0.0741 | 1.09e-02 | 1.043 | 0.006 |
+| Kinetics-400 | VideoMAE | F(4,1995)=65.984 | 1.75e-52 | 0.1168 | F(4,1995)=0.085 | 9.87e-01 | 0.0002 | 0.0715 ± 0.0701 | 1.04e-03 | 0.827 | 0.037 |
+| Kinetics-400 | ViViT | F(4,1995)=38.816 | 2.49e-31 | 0.0722 | F(4,1995)=0.089 | 9.86e-01 | 0.0002 | 0.0824 ± 0.0637 | 2.94e-02 | 0.782 | 0.036 |
 
 > Note: "Coverage p-value" and "Coverage η²" report the ANOVA p-value and partial eta-squared for the effect of **coverage** (across 10, 25, 50, 75, 100%), while "Stride p-value" and "Stride η²" report the analogous statistics for the effect of **stride**. Exact p-values are shown (scientific notation for very small values) with a parenthetical significance threshold marker where appropriate (e.g., <0.001). Levene p is from Levene's test for homogeneity of variances across coverage levels.
 
