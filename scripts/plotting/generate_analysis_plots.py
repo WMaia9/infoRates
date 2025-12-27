@@ -351,6 +351,66 @@ def generate_coverage_curves_composite(evaluations_base_dir, output_dir):
     print(f"✅ Saved coverage-degradation composite: {out}")
 
 
+def generate_representative_composite(evaluations_base_dir, output_dir):
+    """Generate a 2×3 composite of representative class curves.
+
+    Rows = datasets (UCF-101, Kinetics-400), columns = models (TimeSformer, VideoMAE, ViViT).
+    Each subplot uses the same 8 classes (4 sensitive + 4 robust) per dataset.
+    """
+    print("🧩 Generating representative 2×3 composite...")
+
+    datasets = ['ucf101', 'kinetics400']
+    models = ['timesformer', 'videomae', 'vivit']
+
+    fig, axes = plt.subplots(2, 3, figsize=(18, 10), sharey='row')
+
+    for i, dataset in enumerate(datasets):
+        # Compute shared classes for this dataset
+        model_dirs = [Path(evaluations_base_dir) / dataset / m for m in models]
+        shared = compute_shared_classes(model_dirs, n_sensitive=4, n_robust=4, max_total=8)
+
+        for j, model in enumerate(models):
+            ax = axes[i, j]
+            model_dir = Path(evaluations_base_dir) / dataset / model
+            matches = list(model_dir.glob("*per_class*.csv"))
+            if not matches or len(shared) == 0:
+                ax.text(0.5, 0.5, 'No data', ha='center', va='center', fontsize=12)
+                ax.set_axis_off()
+                continue
+
+            df = pd.read_csv(matches[0])
+            # Use best stride for plotting (keeps consistent with representative plots)
+            best_stride = df.groupby('stride')['accuracy'].mean().idxmax()
+            df = df[df['stride'] == best_stride]
+            pivot = df.groupby(['class', 'coverage'], as_index=False)['accuracy'].mean().pivot(index='class', columns='coverage', values='accuracy')
+            coverages = sorted(df['coverage'].unique())
+
+            pal = sns.color_palette('tab10', n_colors=len(shared))
+            for k, cls in enumerate(shared):
+                if cls not in pivot.index:
+                    continue
+                accuracies = [pivot.loc[cls, cov] * 100.0 for cov in coverages]
+                ax.plot(coverages, accuracies, label=cls, color=pal[k % len(pal)], linewidth=2, marker='o')
+
+            ax.set_title(f"{dataset.upper()} — {model.capitalize()}", fontsize=12)
+            ax.set_xticks(coverages)
+            ax.set_xticklabels([f"{int(c)}%" for c in coverages])
+            ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y:.1f}%"))
+            ax.grid(True, alpha=0.25)
+
+            # Legend below compact
+            ax.legend(ncol=4, bbox_to_anchor=(0.5, -0.35), loc='upper center', fontsize=9)
+
+    fig.suptitle('Representative Classes (4 sensitive + 4 robust) — Comparative', fontsize=18, fontweight='bold')
+    plt.tight_layout(rect=[0, 0, 1, 0.94])
+
+    out = Path(output_dir) / 'per_class_representative_composite.png'
+    out.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(out, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"✅ Saved representative composite: {out}")
+
+
 def generate_distribution_composite(evaluations_base_dir, output_dir):
     """Generate a 2x3 composite figure: rows=datasets (UCF-101, Kinetics-400), cols=models (TimeSformer, VideoMAE, ViViT).
 
@@ -581,6 +641,8 @@ def main():
         generate_coverage_stride_composite(base_dir / 'evaluations', comp_out, cmap='viridis')
         # And generate the coverage-degradation curves composite (6 panels)
         generate_coverage_curves_composite(base_dir / 'evaluations', comp_out)
+        # Generate the representative classes 2×3 composite (shared 4 sensitive + 4 robust per dataset)
+        generate_representative_composite(base_dir / 'evaluations', comp_out)
 
     print(f"\n🎉 Plot generation complete!")
 
