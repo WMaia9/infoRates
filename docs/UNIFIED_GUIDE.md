@@ -62,6 +62,11 @@ python scripts/data_processing/train_multimodel.py --model all --epochs 5 --no-w
 python scripts/evaluation/run_eval_multimodel.py --model all --batch-size 16 --no-wandb
 ```
 
+**Then generate all plots** (5-10 min):
+```bash
+python scripts/plotting/generate_analysis_plots.py --model all --dataset ucf101
+```
+
 **Then compare** (10 min):
 ```bash
 python scripts/data_processing/compare_models.py
@@ -84,12 +89,18 @@ torchrun --nproc_per_node=2 scripts/data_processing/train_multimodel.py \
 **Timeline**:
 - Fine-tuning (all 3 models parallel): ~3 hours
 - Evaluation: ~3-4 hours
+- Plot generation: ~5-10 minutes
 - Comparison: ~10 minutes
 - **Total**: ~7.5 hours ⭐
 
 **Then evaluate**:
 ```bash
 python scripts/evaluation/run_eval_multimodel.py --model all --batch-size 16 --no-wandb
+```
+
+**Then generate all plots**:
+```bash
+python scripts/plotting/generate_analysis_plots.py --model all --dataset ucf101
 ```
 
 **Then compare**:
@@ -281,12 +292,30 @@ python scripts/data_processing/compare_models.py
 python scripts/data_processing/compare_models.py --results-dir evaluations/ucf101
 ```
 
-**Outputs**:
+---
 
-1. **multimodel_analysis.json** - Statistical findings
-   - ANOVA F-test with p-value
-   - Aliasing robustness scores
-   - Best accuracies per model
+### 5. `scripts/plotting/generate_analysis_plots.py` (200+ lines)
+
+**What it does**: Generates all analysis plots and statistical reports for temporal aliasing evaluation.
+
+**Basic Usage**:
+```bash
+# Generate all plots for VideoMAE on UCF101
+python scripts/plotting/generate_analysis_plots.py --model videomae --dataset ucf101
+
+# Generate plots for all models on Kinetics400
+python scripts/plotting/generate_analysis_plots.py --model all --dataset kinetics400
+```
+
+**Outputs** (per model):
+
+1. **per_class_distribution_by_coverage.png** - Box/violin plots of accuracy distributions
+2. **per_class_representative.png** - Sensitivity analysis of representative classes
+3. **accuracy_heatmap.png** - Coverage vs stride accuracy heatmap
+4. **accuracy_vs_coverage.png** - Accuracy curves by stride
+5. **statistical_results.json** - Comprehensive statistical analysis
+6. **pairwise_coverage_comparisons.csv** - Statistical test results
+7. **summary_statistics_by_coverage.csv** - Descriptive statistics
 
 2. **Plots**:
    - `comparison_accuracy_vs_coverage.png` - Line plot across models

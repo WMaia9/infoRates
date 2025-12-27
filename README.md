@@ -7,6 +7,7 @@ Quick start: see START_HERE.txt for commands, or the full docs/UNIFIED_GUIDE.md 
 Key entry points
 - Training (multi-model, DDP-ready): scripts/data_processing/train_ddp.sh → launches scripts/data_processing/train_multimodel.py
 - Evaluation (multi-model): scripts/evaluation/run_eval_multimodel.py
+- Plotting (all analysis plots): scripts/plotting/generate_analysis_plots.py --model MODEL --dataset DATASET
 - Legacy DDP eval of a saved model: scripts/evaluation/run_eval.py and scripts/data_processing/pipeline_eval.sh
 
 Setup
@@ -23,6 +24,12 @@ bash scripts/data_processing/train_ddp.sh --model videomae --gpus 2 --epochs 5
 
 # Evaluate all models with temporal sampling
 python scripts/evaluation/run_eval_multimodel.py --model all --batch-size 16
+
+# Generate all analysis plots for VideoMAE on UCF101
+python scripts/plotting/generate_analysis_plots.py --model videomae --dataset ucf101
+
+# Generate plots for all models on Kinetics400
+python scripts/plotting/generate_analysis_plots.py --model all --dataset kinetics400
 ```
 
 More details: docs/UNIFIED_GUIDE.md
