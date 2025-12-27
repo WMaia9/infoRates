@@ -129,6 +129,8 @@ This section summarizes the inferential statistics for coverage and stride acros
 ### 2.4.1 Overview and Data Sources
 All reported inferential statistics below are computed from per-class accuracy vectors stored in the evaluation outputs (see `evaluations/*/*_per_class.csv`) and the precomputed summary statistics in `evaluations/*/*/statistical_results.json`. Pairwise coverage comparisons were computed using Welch's t-tests on per-class accuracies (stride = 1) with Bonferroni correction for 10 comparisons.
 
+**Data integrity note:** During verification we discovered that the UCF-101 per-class CSV exports contained duplicated rows (each `class×coverage×stride` entry was present twice). We deduplicated those per-class CSVs (backups saved as `*.orig`), re-ran the `scripts/plotting/statistical_analysis.py` script for all UCF-101 models, and saved updated `statistical_results.json`, `pairwise_coverage_comparisons.csv`, and `summary_statistics_by_coverage.csv` files under the corresponding `evaluations/ucf101/*/` folders (e.g., `evaluations/ucf101/videomae/statistical_results.json`). This correction resolved inflated sample counts but did not change the substantive conclusions of the paper. Note also that per-configuration timing (`avg_time`) was not recorded (all zeros) in the current runs; timing analyses are therefore omitted and can be added by instrumenting the evaluation script to log per-run timings.
+
 ### 2.4.2 Comprehensive ANOVA and Variance Results
 **Table 3: Comprehensive Statistical Results (coverage and stride ANOVAs, mean drop, Levene, effect sizes)**
 
